@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <map>
 #include <vector>
+#include <chrono>
 
 using price_t = std::int32_t;
 using quantity_t = std::uint32_t;
@@ -20,28 +21,12 @@ struct OrderInfo {
     quantity_t quantity;
     price_t price;
     OrderType type;
-};
-
-class Order {
-public:
-    Order(orderid_t orderid, quantity_t quantity, price_t price, OrderType type)
-        : orderid_{orderid}, quantity_{quantity}, price_{price}, type_{type}
-    {}
-
-    orderid_t getOrderId() const { return orderid_; }
-    quantity_t getQuantity() const { return quantity_; }
-    price_t getPrice() const { return price_; }
-    OrderType getOrderType() const { return type_; }
-private:
-    orderid_t orderid_;
-    quantity_t quantity_;
-    price_t price_;
-    OrderType type_;
+    time_t open_on;
 };
 
 class OrderBook {
 public:
-    void openOrder(quantity_t quantity, price_t price, OrderType type);
+    void newOrder(quantity_t quantity, price_t price, OrderType type);
     void cancelOrder(orderid_t orderid);
     void modifyOrder(orderid_t orderid, price_t price, quantity_t quantity, OrderType type);
 private:
