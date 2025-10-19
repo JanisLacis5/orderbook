@@ -7,6 +7,7 @@ using price_t = std::int32_t;
 using quantity_t = std::uint32_t;
 using orderid_t = std::uint64_t;
 using orderids_t = std::vector<orderid_t>;
+using ordertime_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
 enum OrderType {
     Market,
@@ -21,6 +22,18 @@ struct OrderInfo {
     quantity_t quantity;
     price_t price;
     OrderType type;
+    time_t open_on;
+};
+
+class Order {
+    Order(orderid_t orderid, quantity_t quantity, price_t price, OrderType type)
+        : orderid_{orderid}, quantity_{quantity}, price_{price}, type_{type}
+    {}
+private:
+    orderid_t orderid_;
+    quantity_t quantity_;
+    price_t price_;
+    OrderType type_;
     time_t open_on;
 };
 
