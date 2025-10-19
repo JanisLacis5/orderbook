@@ -2,6 +2,8 @@
 #include <map>
 #include <vector>
 #include <chrono>
+#include <list>
+#include <unordered_map>
 
 using price_t = std::int32_t;
 using quantity_t = std::uint32_t;
@@ -17,14 +19,6 @@ enum OrderType {
     FillAndKill
 };
 
-struct OrderInfo {
-    orderid_t orderid;
-    quantity_t quantity;
-    price_t price;
-    OrderType type;
-    time_t open_on;
-};
-
 class Order {
     Order(orderid_t orderid, quantity_t quantity, price_t price, OrderType type)
         : orderid_{orderid}, quantity_{quantity}, price_{price}, type_{type}
@@ -37,15 +31,25 @@ private:
     time_t open_on;
 };
 
+using orderptr_t = std::shared_ptr<Order>;
+using orderptrs_t = std::list<orderptr_t>;
+
 class OrderBook {
 public:
     void newOrder(quantity_t quantity, price_t price, OrderType type);
     void cancelOrder(orderid_t orderid);
     void modifyOrder(orderid_t orderid, price_t price, quantity_t quantity, OrderType type);
 private:
+    struct OrderInfo {
+        orderptr_t order_;
+        orderptrs_t::iterator location_;
+    };
+
     orderid_t lastOrderId_{1};
-    std::map<price_t, orderids_t, std::less<price_t>> ask;
-    std::map<price_t, orderids_t, std::greater<price_t>> bid;
+    std::map<price_t, orderids_t, std::less<price_t>> ask_;
+    std::map<price_t, orderids_t, std::greater<price_t>> bid_;
+    std::unordered_map<orderid_t, OrderInfo> orders_;
+    orderptrs_t orderPtrs_;
 
     void incrementLastOrderId() { lastOrderId_++; };
 };
