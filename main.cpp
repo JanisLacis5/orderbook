@@ -2,6 +2,7 @@
 #include <map>
 #include <vector>
 #include <chrono>
+#include <cmath>
 #include <list>
 #include <unordered_map>
 
@@ -84,7 +85,7 @@ private:
     std::map<price_t, orderPtrs_t, std::greater<price_t>> bid_;
 
     trades_t passiveMatchOrders();  // TODO: implement
-    trades_t agressiveMatchOrders();
+    trades_t aggressiveMatchOrder(orderPtr_t order);  // TODO: implement
     microsec_t getCurrTime() const {
         auto time = std::chrono::system_clock::now().time_since_epoch();
         return std::chrono::duration_cast<microsec_t>(time);
@@ -98,7 +99,7 @@ private:
     }
     void processAddedOrder(orderPtr_t order);  // TODO: implement
     bool canBeFullyFilled(orderPtr_t order);  // TODO: implement
-    bool doesCrossSpread(orderPtr_t order) {
+    bool doesCrossSpread(orderPtr_t order) const {
         if (order->getSide() == Side::Sell) {
             const auto& [bestBid, _] = *bid_.begin();
             return order->getPrice() <= bestBid;
@@ -124,40 +125,21 @@ private:
 
 trades_t OrderBook::addOrder(orderPtr_t order) {
     OrderType type = order->getType();
-    Side side = order->getSide();
-    price_t price = order->getPrice();
 
-    if (type == OrderType::Market) {
-        order = toFillAndKill(order);
-
-        if (side == Side::Sell) {
-            auto& [worstBidPrice, _] = *bid_.rbegin();
-            ask_[worstBidPrice].push_back(order);
-        }
-        else if (side == Side::Buy) {
-            auto& [worstAskPrice, _] = *ask_.rbegin();
-            bid_[worstAskPrice].push_back(order);
-        }
-        else
-            throw std::logic_error("Invalid side");
-    }
-    else if (type == OrderType::FillAndKill) {
+    if (type == OrderType::FillAndKill) {
         if (!doesCrossSpread(order))
             return {};
-        addAtOrderPrice(order);
     }
     else if (type == OrderType::FillOrKill) {
         if (!canBeFullyFilled(order) || !doesCrossSpread(order))
             return {};
-        addAtOrderPrice(order);
     }
-    else if (type == OrderType::GoodTillCancel || type == OrderType::GoodTillEOD)
+    else if (type == OrderType::GoodTillCancel || type == OrderType::GoodTillEOD) {
         addAtOrderPrice(order);
-    else
-        return {};
-
-    processAddedOrder(order);
-    return matchOrders();
+        processAddedOrder(order);
+        return passiveMatchOrders();
+    }
+    return aggressiveMatchOrder(order);
 }
 
 int main() {
