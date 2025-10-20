@@ -84,7 +84,7 @@ private:
     std::map<price_t, orderPtrs_t, std::greater<price_t>> bid_;
     orderPtrs_t orderPtrs_;
 
-    trades_t matchOrders();
+    trades_t matchOrders();  // TODO: implement
     microsec_t getCurrTime() const {
         auto time = std::chrono::system_clock::now().time_since_epoch();
         return std::chrono::duration_cast<microsec_t>(time);
@@ -96,7 +96,32 @@ private:
         modifications.type = OrderType::FillOrKill;
         return modifyOrder(order, modifications);
     }
-    void processAddedOrder(orderPtr_t order) {};
+    void processAddedOrder(orderPtr_t order);  // TODO: implement
+    bool canBeFullyFilled(orderPtr_t order);  // TODO: implement
+    bool doesCrossSpread(orderPtr_t order) {
+        if (order->getSide() == Side::Sell) {
+            const auto& [bestAsk, _] = *ask_.begin();
+            return order->getPrice() < bestAsk;
+        }
+        else if (order->getSide() == Side::Buy) {
+            const auto& [bestBid, _] = *bid_.begin();
+            return order->getPrice() > bestBid;
+        }
+        else
+            throw std::logic_error("Invalid side");
+    }
+    void addAtOrderPrice(orderPtr_t order) {
+        if (order->getSide() == Side::Sell) {
+            auto& [worstBidPrice, _] = *bid_.rbegin();
+            ask_[worstBidPrice].push_back(order);
+        }
+        else if (order->getSide() == Side::Buy) {
+            auto& [worstAskPrice, _] = *ask_.rbegin();
+            bid_[worstAskPrice].push_back(order);
+        }
+        else
+            throw std::logic_error("Invalid side");
+    }
 };
 
 trades_t OrderBook::addOrder(orderPtr_t order) {
@@ -116,36 +141,26 @@ trades_t OrderBook::addOrder(orderPtr_t order) {
             bid_[worstAskPrice].push_back(order);
         }
         else
-            return {};
+            throw std::logic_error("Invalid side");
     }
-
     else if (type == OrderType::FillAndKill) {
-        if (side == Side::Sell) {
-            auto& [bestAsk, _] = *ask_.begin();
-
-            if (bestAsk <= order->getPrice())
-                return {};
-
-           ask_[order->getPrice()].push_back(order);
-        }
-        else if (side == Side::Buy) {
-            auto& [bestBid , _] = *bid_.begin();
-
-            if (bestBid >= order->getPrice())
-                return {};
-
-            bid_[order->getPrice()].push_back(order);
-        }
+        if (doesCrossSpread(order))
+            return {};
+        addAtOrderPrice(order);
     }
-    else if (type == OrderType::FillOrKill) {}
-    else if (type == OrderType::GoodTillCancel) {}
-    else if (type == OrderType::GoodTillEOD) {}
+    else if (type == OrderType::FillOrKill) {
+        if (!canBeFullyFilled(order) || !doesCrossSpread(order))
+            return {};
+        addAtOrderPrice(order);
+    }
+    else if (type == OrderType::GoodTillCancel || type == OrderType::GoodTillEOD)
+        addAtOrderPrice(order);
     else
         return {};
 
+    processAddedOrder(order);
     return matchOrders();
 }
-
 
 int main() {
     OrderBook orderbook;
