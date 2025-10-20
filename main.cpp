@@ -32,8 +32,8 @@ struct ModifyOrder {
 
 class Order {
 public:
-    Order(orderId_t orderid, quantity_t quantity, price_t price, OrderType type, microsec_t opentime)
-        : orderid_{orderid}, initialQuantity_{quantity}, remainingQuantity_{quantity}, price_{price}, type_{type}, opentime_{opentime}
+    Order(orderId_t orderid, quantity_t quantity, price_t price, OrderType type, Side side, microsec_t opentime)
+        : orderid_{orderid}, initialQuantity_{quantity}, remainingQuantity_{quantity}, price_{price}, type_{type}, side_{side}, opentime_{opentime}
     {}
 
     orderId_t getOrderid() const { return orderid_; }
@@ -82,9 +82,9 @@ private:
 
     std::map<price_t, orderPtrs_t, std::less<price_t>> ask_;
     std::map<price_t, orderPtrs_t, std::greater<price_t>> bid_;
-    orderPtrs_t orderPtrs_;
 
-    trades_t matchOrders();  // TODO: implement
+    trades_t passiveMatchOrders();  // TODO: implement
+    trades_t agressiveMatchOrders();
     microsec_t getCurrTime() const {
         auto time = std::chrono::system_clock::now().time_since_epoch();
         return std::chrono::duration_cast<microsec_t>(time);
@@ -93,31 +93,29 @@ private:
         ModifyOrder modifications;
         modifications.quantity = order->getRemainingQuantity();
         modifications.price = order->getPrice();
-        modifications.type = OrderType::FillOrKill;
+        modifications.type = OrderType::FillAndKill;
         return modifyOrder(order, modifications);
     }
     void processAddedOrder(orderPtr_t order);  // TODO: implement
     bool canBeFullyFilled(orderPtr_t order);  // TODO: implement
     bool doesCrossSpread(orderPtr_t order) {
         if (order->getSide() == Side::Sell) {
-            const auto& [bestAsk, _] = *ask_.begin();
-            return order->getPrice() < bestAsk;
+            const auto& [bestBid, _] = *bid_.begin();
+            return order->getPrice() <= bestBid;
         }
         else if (order->getSide() == Side::Buy) {
-            const auto& [bestBid, _] = *bid_.begin();
-            return order->getPrice() > bestBid;
+            const auto& [bestAsk, _] = *ask_.begin();
+            return order->getPrice() >= bestAsk;
         }
         else
             throw std::logic_error("Invalid side");
     }
     void addAtOrderPrice(orderPtr_t order) {
         if (order->getSide() == Side::Sell) {
-            auto& [worstBidPrice, _] = *bid_.rbegin();
-            ask_[worstBidPrice].push_back(order);
+            ask_[order->getPrice()].push_back(order);
         }
         else if (order->getSide() == Side::Buy) {
-            auto& [worstAskPrice, _] = *ask_.rbegin();
-            bid_[worstAskPrice].push_back(order);
+            bid_[order->getPrice()].push_back(order);
         }
         else
             throw std::logic_error("Invalid side");
@@ -144,7 +142,7 @@ trades_t OrderBook::addOrder(orderPtr_t order) {
             throw std::logic_error("Invalid side");
     }
     else if (type == OrderType::FillAndKill) {
-        if (doesCrossSpread(order))
+        if (!doesCrossSpread(order))
             return {};
         addAtOrderPrice(order);
     }
