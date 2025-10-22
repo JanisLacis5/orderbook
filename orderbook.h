@@ -7,8 +7,8 @@
 class OrderBook {
 public:
     trades_t addOrder(orderPtr_t order);
-    void cancelOrder(orderId_t orderId);  // TODO: implement
-    orderPtr_t modifyOrder(orderPtr_t order, ModifyOrder modifications);  // TODO: implement
+    void cancelOrder(orderId_t orderId);
+    trades_t modifyOrder(orderPtr_t order, ModifyOrder modifications);
 private:
     struct OrderInfo {
         orderPtr_t order_;

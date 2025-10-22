@@ -143,6 +143,16 @@ void OrderBook::cancelOrder(orderId_t orderId) {
         levelData_.erase(price);
 }
 
-orderPtr_t OrderBook::modifyOrder(orderPtr_t order, ModifyOrder modifications) {  // TODO: implement
+trades_t OrderBook::modifyOrder(orderPtr_t order, ModifyOrder modifications) {
+    cancelOrder(order->getOrderid());
 
+    std::shared_ptr<Order> newOrder = std::make_shared<Order>(
+        order->getOrderid(),
+        modifications.quantity,
+        modifications.price,
+        modifications.type,
+        modifications.side,
+        getCurrTime()
+    );
+    return addOrder(newOrder);
 }

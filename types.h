@@ -17,4 +17,5 @@ struct ModifyOrder {
     price_t price;
     quantity_t quantity;
     OrderType type;
+    Side side;
 };
