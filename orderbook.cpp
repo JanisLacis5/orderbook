@@ -119,8 +119,28 @@ trades_t OrderBook::addOrder(orderPtr_t order) {
     return aggressiveMatchOrder(order);
 }
 
-void OrderBook::cancelOrder(orderId_t orderId) {  // TODO: implement
+void OrderBook::cancelOrder(orderId_t orderId) {
+    OrderInfo orderInfo = orders_.at(orderId);
+    orders_.erase(orderId);
 
+    orderPtr_t order = orderInfo.order_;
+    price_t price = order->getPrice();
+
+    if (order->getSide() == Side::Sell) {
+        ask_[price].erase(orderInfo.location_);
+        if (ask_[price].empty())
+            ask_.erase(price);
+    }
+    else if (order->getSide() == Side::Buy) {
+        bid_[price].erase(orderInfo.location_);
+        if (bid_[price].empty())
+           bid_.erase(price);
+    }
+
+    levelData_[price].volume -= order->getRemainingQuantity();
+    levelData_[price].orderCnt--;
+    if (!levelData_[price].orderCnt)
+        levelData_.erase(price);
 }
 
 orderPtr_t OrderBook::modifyOrder(orderPtr_t order, ModifyOrder modifications) {  // TODO: implement
