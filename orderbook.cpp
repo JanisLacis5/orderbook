@@ -14,28 +14,67 @@ trades_t OrderBook::aggressiveMatchOrder(orderPtr_t order) {
     if (order->getSide() == Side::Buy) {
         price_t ceilPrice = order->getType() == OrderType::Market ? INT32_MAX : order->getPrice();
 
-        auto currIt = ask_.begin();
-        while (currIt != ask_.end() && order->getRemainingQuantity() > 0) {
-            auto& [currPrice, orders] = *currIt;
+        auto askIt = ask_.begin();
+        while (askIt != ask_.end() && order->getRemainingQuantity() > 0) {
+            auto& [currPrice, orders] = *askIt;
             if (currPrice > ceilPrice)
                 break;
 
             while (!orders.empty() && order->getRemainingQuantity() > 0) {
-                orderPtr_t currOrder = orders.front();
-                quantity_t toFill = std::min(currOrder->getRemainingQuantity(), order->getRemainingQuantity());
+                orderPtr_t seller = orders.front();
+                quantity_t toFill = std::min(seller->getRemainingQuantity(), order->getRemainingQuantity());
 
                 order->fill(toFill);
-                currOrder->fill(toFill);
-                Trade trade;
-                trade.seller = currOrder;
-                trade.buyer = order;
+                seller->fill(toFill);
+                levelData_[currPrice].volume -= toFill;
+                levelData_[currPrice].orderCnt--;
+
+                Trade trade = newTrade(order, seller, toFill);
                 trades.push_back(trade);
-                if (currOrder->getRemainingQuantity() == 0)
+                if (seller->getRemainingQuantity() == 0)
                     orders.pop_front();
             }
-            currIt++;
+
+            if (orders.empty())
+                ask_.erase(askIt);
+            if (levelData_[currPrice].orderCnt == 0)
+                levelData_.erase(currPrice);
+            askIt++;
         }
     }
+    else if (order->getSide() == Side::Sell) {
+        price_t floorPrice = order->getType() == OrderType::Market ? INT32_MIN : order->getPrice();
+
+        auto bidIt = bid_.begin();
+        while (bidIt != bid_.end() && order->getRemainingQuantity() > 0) {
+            auto& [currPrice, orders] = *bidIt;
+            if (currPrice < floorPrice)
+                break;
+
+            while (!orders.empty() && order->getRemainingQuantity() > 0) {
+                orderPtr_t buyer = orders.front();
+                quantity_t toFill = std::min(order->getRemainingQuantity(), buyer->getRemainingQuantity());
+
+                order->fill(toFill);
+                buyer->fill(toFill);
+                levelData_[currPrice].volume -= toFill;
+                levelData_[currPrice].orderCnt--;
+
+                Trade trade = newTrade(buyer, order, toFill);
+                trades.push_back(trade);
+                if (buyer->getRemainingQuantity() == 0)
+                    orders.pop_front();
+            }
+
+            if (orders.empty())
+                bid_.erase(bidIt);
+            if (levelData_[currPrice].orderCnt == 0)
+                levelData_.erase(currPrice);
+            bidIt++;
+        }
+    }
+
+    return trades;
 }
 
 microsec_t OrderBook::getCurrTime() const {
