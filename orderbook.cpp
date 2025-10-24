@@ -8,72 +8,56 @@ trades_t OrderBook::passiveMatchOrders() { // TODO: implement
 }
 
 trades_t OrderBook::aggressiveMatchOrder(orderPtr_t order) {
-    quantity_t quantity = order->getRemainingQuantity();
+    Side side = order->getSide();
     trades_t trades;
+    std::optional<price_t> treshold;
 
-    if (order->getSide() == Side::Buy) {
-        price_t ceilPrice = order->getType() == OrderType::Market ? INT32_MAX : order->getPrice();
+    if (order->getType() != OrderType::Market)
+        treshold = order->getPrice();
 
-        auto askIt = ask_.begin();
-        while (askIt != ask_.end() && order->getRemainingQuantity() > 0) {
-            auto& [currPrice, orders] = *askIt;
-            if (currPrice > ceilPrice)
-                break;
+    auto it = side == Side::Buy ? ask_.begin() : bid_.begin();
+    auto itEnd = side == Side::Buy ? ask_.end() : bid_.end();
 
-            while (!orders.empty() && order->getRemainingQuantity() > 0) {
-                orderPtr_t seller = orders.front();
-                quantity_t toFill = std::min(seller->getRemainingQuantity(), order->getRemainingQuantity());
+    while (it != itEnd && !order->isFullyFilled()) {
+        auto [currPrice, orders] = *it;
+        if (treshold.has_value() && (
+            (side == Side::Buy && currPrice > treshold.value()) ||
+            (side == Side::Sell && currPrice < treshold.value())
+            ))
+            break;
 
-                order->fill(toFill);
-                seller->fill(toFill);
-                levelData_[currPrice].volume -= toFill;
-                levelData_[currPrice].orderCnt--;
+        while (!orders.empty() && !order->isFullyFilled()) {
+            orderPtr_t opposite = orders.front();
+            quantity_t toFill = std::min(order->getRemainingQuantity(), opposite->getRemainingQuantity());
 
-                Trade trade = newTrade(order, seller, toFill);
-                trades.push_back(trade);
-                if (seller->getRemainingQuantity() == 0)
-                    orders.pop_front();
+            opposite->fill(toFill);
+            order->fill(toFill);
+            levelData_[currPrice].volume -= toFill;
+            levelData_[currPrice].orderCnt--;
+
+            Trade trade = (
+                side == Side::Buy ?
+                newTrade(order, opposite, toFill) :
+                newTrade(opposite, order, toFill)
+            );
+            trades.push_back(trade);
+
+            if (opposite->isFullyFilled())
+                orders.pop_front();
+
+            if (orders.empty()) {
+                if (side == Side::Buy)
+                    ask_.erase(it);
+                else
+                    bid_.erase(it);
+
+                if (levelData_[currPrice].orderCnt == 0)
+                    levelData_.erase(currPrice);
+
+                it++;
             }
-
-            if (orders.empty())
-                ask_.erase(askIt);
-            if (levelData_[currPrice].orderCnt == 0)
-                levelData_.erase(currPrice);
-            askIt++;
         }
     }
-    else if (order->getSide() == Side::Sell) {
-        price_t floorPrice = order->getType() == OrderType::Market ? INT32_MIN : order->getPrice();
-
-        auto bidIt = bid_.begin();
-        while (bidIt != bid_.end() && order->getRemainingQuantity() > 0) {
-            auto& [currPrice, orders] = *bidIt;
-            if (currPrice < floorPrice)
-                break;
-
-            while (!orders.empty() && order->getRemainingQuantity() > 0) {
-                orderPtr_t buyer = orders.front();
-                quantity_t toFill = std::min(order->getRemainingQuantity(), buyer->getRemainingQuantity());
-
-                order->fill(toFill);
-                buyer->fill(toFill);
-                levelData_[currPrice].volume -= toFill;
-                levelData_[currPrice].orderCnt--;
-
-                Trade trade = newTrade(buyer, order, toFill);
-                trades.push_back(trade);
-                if (buyer->getRemainingQuantity() == 0)
-                    orders.pop_front();
-            }
-
-            if (orders.empty())
-                bid_.erase(bidIt);
-            if (levelData_[currPrice].orderCnt == 0)
-                levelData_.erase(currPrice);
-            bidIt++;
-        }
-    }
-
     return trades;
 }
 
