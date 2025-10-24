@@ -7,8 +7,35 @@ trades_t OrderBook::passiveMatchOrders() { // TODO: implement
     return {};
 }
 
-trades_t OrderBook::aggressiveMatchOrder(orderPtr_t order) {  // TODO: implement
-    return {};
+trades_t OrderBook::aggressiveMatchOrder(orderPtr_t order) {
+    quantity_t quantity = order->getRemainingQuantity();
+    trades_t trades;
+
+    if (order->getSide() == Side::Buy) {
+        price_t ceilPrice = order->getType() == OrderType::Market ? INT32_MAX : order->getPrice();
+
+        auto currIt = ask_.begin();
+        while (currIt != ask_.end() && order->getRemainingQuantity() > 0) {
+            auto& [currPrice, orders] = *currIt;
+            if (currPrice > ceilPrice)
+                break;
+
+            while (!orders.empty() && order->getRemainingQuantity() > 0) {
+                orderPtr_t currOrder = orders.front();
+                quantity_t toFill = std::min(currOrder->getRemainingQuantity(), order->getRemainingQuantity());
+
+                order->fill(toFill);
+                currOrder->fill(toFill);
+                Trade trade;
+                trade.seller = currOrder;
+                trade.buyer = order;
+                trades.push_back(trade);
+                if (currOrder->getRemainingQuantity() == 0)
+                    orders.pop_front();
+            }
+            currIt++;
+        }
+    }
 }
 
 microsec_t OrderBook::getCurrTime() const {
