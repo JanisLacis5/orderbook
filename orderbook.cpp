@@ -16,14 +16,6 @@ microsec_t OrderBook::getCurrTime() const {
     return std::chrono::duration_cast<microsec_t>(time);
 }
 
-orderPtr_t OrderBook::toFillAndKill(orderPtr_t order) {
-    ModifyOrder modifications;
-    modifications.quantity = order->getRemainingQuantity();
-    modifications.price = order->getPrice();
-    modifications.type = OrderType::FillAndKill;
-    return modifyOrder(order, modifications);
-}
-
 void OrderBook::processAddedOrder(orderPtr_t order) {
     orderId_t orderId = order->getOrderid();
 

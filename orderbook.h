@@ -27,7 +27,6 @@ private:
     trades_t passiveMatchOrders();  // TODO: implement
     trades_t aggressiveMatchOrder(orderPtr_t order);  // TODO: implement
     microsec_t getCurrTime() const;
-    orderPtr_t toFillAndKill(orderPtr_t order);
     void processAddedOrder(orderPtr_t order);
     bool canBeFullyFilled(price_t price, quantity_t quantity, Side side) const;
     bool doesCrossSpread(price_t price, Side side) const;
