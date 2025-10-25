@@ -10,19 +10,19 @@ trades_t OrderBook::passiveMatchOrders() { // TODO: implement
 trades_t OrderBook::aggressiveMatchOrder(orderPtr_t order) {
     Side side = order->getSide();
     trades_t trades;
-    std::optional<price_t> treshold;
+    std::optional<price_t> threshold;
 
     if (order->getType() != OrderType::Market)
-        treshold = order->getPrice();
+        threshold = order->getPrice();
 
     auto it = side == Side::Buy ? ask_.begin() : bid_.begin();
     auto itEnd = side == Side::Buy ? ask_.end() : bid_.end();
 
     while (it != itEnd && !order->isFullyFilled()) {
-        auto [currPrice, orders] = *it;
-        if (treshold.has_value() && (
-            (side == Side::Buy && currPrice > treshold.value()) ||
-            (side == Side::Sell && currPrice < treshold.value())
+        auto& [currPrice, orders] = *it;
+        if (threshold.has_value() && (
+            (side == Side::Buy && currPrice > threshold.value()) ||
+            (side == Side::Sell && currPrice < threshold.value())
             ))
             break;
 
@@ -30,32 +30,27 @@ trades_t OrderBook::aggressiveMatchOrder(orderPtr_t order) {
             orderPtr_t opposite = orders.front();
             quantity_t toFill = std::min(order->getRemainingQuantity(), opposite->getRemainingQuantity());
 
+            Trade trade = (
+               side == Side::Buy ?
+               newTrade(order, opposite, toFill) :
+               newTrade(opposite, order, toFill)
+           );
+            trades.push_back(trade);
+
             opposite->fill(toFill);
             order->fill(toFill);
             levelData_[currPrice].volume -= toFill;
-            levelData_[currPrice].orderCnt--;
-
-            Trade trade = (
-                side == Side::Buy ?
-                newTrade(order, opposite, toFill) :
-                newTrade(opposite, order, toFill)
-            );
-            trades.push_back(trade);
-
-            if (opposite->isFullyFilled())
+            if (opposite->isFullyFilled()) {
+                levelData_[currPrice].orderCnt--;
                 orders.pop_front();
-
-            if (orders.empty()) {
-                if (side == Side::Buy)
-                    ask_.erase(it);
-                else
-                    bid_.erase(it);
-
-                if (levelData_[currPrice].orderCnt == 0)
-                    levelData_.erase(currPrice);
-
-                it++;
             }
+
+            if (levelData_.at(currPrice).orderCnt == 0)
+                levelData_.erase(currPrice);
+        }
+
+        if (orders.empty()) {
+            it = side == Side::Buy ? ask_.erase(it) : bid_.erase(it);
         }
     }
     return trades;
