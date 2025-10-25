@@ -1,9 +1,9 @@
-#include <numeric>
 #include "orderbook.h"
-
+#include <memory>
+#include <numeric>
 
 // PRIVATE FUNCTION IMPLEMENTATIONS
-trades_t OrderBook::passiveMatchOrders() { // TODO: implement
+trades_t OrderBook::passiveMatchOrders() {  // TODO: implement
     return {};
 }
 
@@ -20,21 +20,15 @@ trades_t OrderBook::aggressiveMatchOrder(orderPtr_t order) {
 
     while (it != itEnd && !order->isFullyFilled()) {
         auto& [currPrice, orders] = *it;
-        if (threshold.has_value() && (
-            (side == Side::Buy && currPrice > threshold.value()) ||
-            (side == Side::Sell && currPrice < threshold.value())
-            ))
+        if (threshold.has_value() && ((side == Side::Buy && currPrice > threshold.value()) ||
+                                      (side == Side::Sell && currPrice < threshold.value())))
             break;
 
         while (!orders.empty() && !order->isFullyFilled()) {
             orderPtr_t opposite = orders.front();
             quantity_t toFill = std::min(order->getRemainingQuantity(), opposite->getRemainingQuantity());
 
-            Trade trade = (
-               side == Side::Buy ?
-               newTrade(order, opposite, toFill) :
-               newTrade(opposite, order, toFill)
-           );
+            Trade trade = (side == Side::Buy ? newTrade(order, opposite, toFill) : newTrade(opposite, order, toFill));
             trades.push_back(trade);
 
             opposite->fill(toFill);
@@ -93,7 +87,7 @@ bool OrderBook::canBeFullyFilled(price_t price, quantity_t quantity, Side side) 
         treshold = askPrice;
     }
 
-    for (const auto& [levelPrice, levelData]: levelData_) {
+    for (const auto& [levelPrice, levelData] : levelData_) {
         if ((side == Side::Buy && levelPrice < treshold) || (side == Side::Sell && levelPrice > treshold))
             continue;
         if ((side == Side::Sell && levelPrice < price) || (side == Side::Buy && levelPrice > price))
@@ -171,7 +165,7 @@ void OrderBook::cancelOrder(orderId_t orderId) {
     else if (order->getSide() == Side::Buy) {
         bid_[price].erase(orderInfo.location_);
         if (bid_[price].empty())
-           bid_.erase(price);
+            bid_.erase(price);
     }
 
     levelData_[price].volume -= order->getRemainingQuantity();
@@ -183,13 +177,8 @@ void OrderBook::cancelOrder(orderId_t orderId) {
 trades_t OrderBook::modifyOrder(orderPtr_t order, ModifyOrder modifications) {
     cancelOrder(order->getOrderid());
 
-    std::shared_ptr<Order> newOrder = std::make_shared<Order>(
-        order->getOrderid(),
-        modifications.quantity,
-        modifications.price,
-        modifications.type,
-        modifications.side,
-        getCurrTime()
-    );
+    std::shared_ptr<Order> newOrder =
+        std::make_shared<Order>(order->getOrderid(), modifications.quantity, modifications.price, modifications.type,
+                                modifications.side, getCurrTime());
     return addOrder(newOrder);
 }

@@ -1,5 +1,8 @@
+#pragma once
+
 #include <vector>
 #include "order.h"
+#include "usings.h"
 
 struct Trade {
     orderPtr_t seller;

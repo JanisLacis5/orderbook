@@ -1,6 +1,8 @@
+#pragma once
+
+#include <chrono>
 #include <cstdint>
 #include <vector>
-#include <chrono>
 
 using price_t = std::int32_t;
 using quantity_t = std::uint32_t;

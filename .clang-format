@@ -3,15 +3,18 @@ BasedOnStyle: Google
 IndentWidth: 4
 UseTab: Never
 TabWidth: 4
-AlignConsecutiveAssignments: true
-AlignConsecutiveDeclarations: true
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
 AlignOperands: true
 AlignTrailingComments: true
 AllowShortBlocksOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
-BreakBeforeBraces: Attach
+BreakBeforeBraces: Custom
+BraceWrapping:
+  BeforeElse: true
+  BeforeCatch: true
 ColumnLimit: 120
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 PointerAlignment: Left

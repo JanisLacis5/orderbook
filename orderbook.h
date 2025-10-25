@@ -1,14 +1,17 @@
+#pragma once
+
 #include <map>
 #include <unordered_map>
-#include "usings.h"
-#include "types.h"
 #include "trade.h"
+#include "types.h"
+#include "usings.h"
 
 class OrderBook {
 public:
     trades_t addOrder(orderPtr_t order);
     void cancelOrder(orderId_t orderId);
     trades_t modifyOrder(orderPtr_t order, ModifyOrder modifications);
+
 private:
     struct OrderInfo {
         orderPtr_t order_;
