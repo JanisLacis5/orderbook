@@ -32,7 +32,7 @@ simulation are implemented.
 
 ## Build & Run
 
-Currently, the project compiles and the developer can simulate actions in [main.cpp](main.cpp) manually by importing the
+Currently, the project compiles and the developer can simulate actions in [main.cpp](src/main.cpp) manually by importing the
 `Orderbook` class and using the public API to call methods. To build and execute, run:
 
 ```bash

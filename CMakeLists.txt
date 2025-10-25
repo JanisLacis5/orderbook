@@ -3,9 +3,9 @@ project(orderbook)
 
 set(CMAKE_CXX_STANDARD 26)
 
-add_executable(orderbook main.cpp
-        orderbook.cpp
-        orderbook.h
-        types.h
-        usings.h
-        trade.h)
+add_executable(orderbook src/main.cpp
+        src/orderbook.cpp
+        src/orderbook.h
+        src/types.h
+        src/usings.h
+        src/trade.h)
