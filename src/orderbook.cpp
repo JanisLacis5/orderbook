@@ -1,6 +1,5 @@
 #include "orderbook.h"
 #include <memory>
-#include <numeric>
 
 // PRIVATE FUNCTION IMPLEMENTATIONS
 trades_t OrderBook::passiveMatchOrders() {  // TODO: implement
