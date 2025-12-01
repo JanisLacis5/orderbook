@@ -55,5 +55,6 @@ cd build && ctest
 - [ ] Generate unit and integration tests to prevent bugs
 - [ ] Simulate lots of participants to test how the engine performs with a lot of interactions per second. Fill out
   the [benchmarks](#benchmarks) section of this README
+- [ ] Create an efficient protocol for data transfer between different parts of the app
 - [ ] Create frontend that interacts with the public API from the backend to place orders, see depth of market and
   show a real price ladder.
