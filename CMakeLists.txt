@@ -1,11 +1,15 @@
 cmake_minimum_required(VERSION 3.28)
 project(orderbook)
 
+# CMAKE VARIABLES
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# CUSTOM VARIABLES
 set(GTEST_GIT_TAG 52eb8108c5bdec04579160ae17225d66034bd723)
+set(CLANG_FORMAT_BIN "/usr/bin/clang-format-20")
 
+# EXTERNAL LIBRARIES
 include(FetchContent)
 FetchContent_Declare(
   googletest
@@ -14,6 +18,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
+# CORE LIBRARIES / EXECUTABLES
 add_library(core
     src/orderbook.cpp
 )
@@ -31,6 +36,29 @@ target_link_libraries(orderbook
     PRIVATE core
 )
 
+# FORMATTING TARGET
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/.clang-format")
+    message(FATAL_ERROR "No .clang-format file found in ${CMAKE_SOURCE_DIR}")
+endif()
+
+file(GLOB_RECURSE FORMAT_FILES CONFIGURE_DEPENDS
+    "${PROJECT_SOURCE_DIR}/src/*.c"
+    "${PROJECT_SOURCE_DIR}/src/*.cpp"
+    "${PROJECT_SOURCE_DIR}/src/*.h"
+    "${PROJECT_SOURCE_DIR}/src/*.hpp"
+    "${PROJECT_SOURCE_DIR}/test/*.c"
+    "${PROJECT_SOURCE_DIR}/test/*.cpp"
+    "${PROJECT_SOURCE_DIR}/test/*.h"
+    "${PROJECT_SOURCE_DIR}/test/*.hpp"
+)
+
+add_custom_target(format
+    COMMAND ${CLANG_FORMAT_BIN} -i ${FORMAT_FILES}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running ${CLANG_FORMAT_BIN} on core + orderbook sources"
+)
+
+# TESTING
 enable_testing()
 
 add_executable(test_core

@@ -1,9 +1,8 @@
+#include <gtest/gtest.h>
 #include <cassert>
 #include "order.h"
 #include "types.h"
 #include "usings.h"
-#include <gtest/gtest.h>
-
 
 TEST(Order, Constructor) {
     auto now = microsec_t{67};
@@ -17,4 +16,3 @@ TEST(Order, Constructor) {
     EXPECT_EQ(order->getSide(), Side::Sell);
     EXPECT_EQ(order->getOpenTime(), now);
 }
-
