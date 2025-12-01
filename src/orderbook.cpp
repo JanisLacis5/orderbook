@@ -2,9 +2,7 @@
 #include <memory>
 
 // PRIVATE FUNCTION IMPLEMENTATIONS
-trades_t Orderbook::matchLimitOrder(orderPtr_t order) {}
-
-trades_t Orderbook::matchMarketOrder(orderPtr_t order) {
+trades_t Orderbook::matchOrder(orderPtr_t order) {
     Side side = order->getSide();
     trades_t trades;
     std::optional<price_t> threshold;
@@ -42,6 +40,13 @@ trades_t Orderbook::matchMarketOrder(orderPtr_t order) {
 
         if (orders.empty())
             it = side == Side::Buy ? ask_.erase(it) : bid_.erase(it);
+    }
+
+    // For orders that are fine to rest on the book, fill orders that have a valid price and leave the rest on the book
+    if (!order->isFullyFilled() &&
+        (order->getType() == OrderType::GoodTillCancel || order->getType() == OrderType::GoodTillEOD)) {
+        addAtOrderPrice(order);
+        processAddedOrder(order);
     }
     return trades;
 }
@@ -134,12 +139,7 @@ trades_t Orderbook::addOrder(orderPtr_t order) {
         if (!canBeFullyFilled(order->getPrice(), order->getInitialQuantity(), order->getSide()))
             return {};
     }
-    else if (type == OrderType::GoodTillCancel || type == OrderType::GoodTillEOD) {
-        addAtOrderPrice(order);
-        processAddedOrder(order);
-        return matchLimitOrder(order);
-    }
-    return matchMarketOrder(order);
+    return matchOrder(order);
 }
 
 void Orderbook::cancelOrder(orderId_t orderId) {
