@@ -12,7 +12,10 @@ public:
           price_{price},
           type_{type},
           side_{side},
-          opentime_{opentime} {}
+          opentime_{opentime} {
+        if (quantity <= 0)
+            throw std::invalid_argument("quantity must be larger than 0");
+    }
 
     orderId_t getOrderid() const { return orderid_; }
     quantity_t getInitialQuantity() const { return initialQuantity_; }
@@ -22,9 +25,13 @@ public:
     Side getSide() const { return side_; }
     microsec_t getOpenTime() const { return opentime_; }
 
-    void fill(quantity_t quantity) { remainingQuantity_ -= quantity; }
     quantity_t getFilled() const { return initialQuantity_ - remainingQuantity_; };
     bool isFullyFilled() const { return remainingQuantity_ == 0; }
+    void fill(quantity_t quantity) {
+        if (quantity <= 0)
+            throw std::invalid_argument("quantity must be larger than 0");
+        remainingQuantity_ -= quantity;
+    }
 
 private:
     orderId_t orderid_;
