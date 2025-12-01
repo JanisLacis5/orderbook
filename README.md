@@ -36,11 +36,16 @@ Currently, the project compiles and the developer can simulate actions in [main.
 `Orderbook` class and using the public API to call methods. To build and execute, run:
 
 ```bash
-mkdir build 
-cd build
-cmake ..
-cmake --build .
-./orderbook
+cmake -B build
+cmake --build build
+./build/orderbook
+```
+
+To run tests, do:
+```bash
+cmake -B build
+cmake --build build
+cd build && ctest
 ```
 
 ## Current Progress & Future Work
