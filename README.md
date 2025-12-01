@@ -46,7 +46,8 @@ cmake --build .
 ## Current Progress & Future Work
 
 - [x] Implement core backend for the orderbook. That includes bid and ask sides, order types, order placement.
-- [ ] Implement a matching engine that matches orders by price-time priority.
+- [x] Implement a matching engine that matches orders by price-time priority.
+- [ ] Generate unit and integration tests to prevent bugs
 - [ ] Simulate lots of participants to test how the engine performs with a lot of interactions per second. Fill out
   the [benchmarks](#benchmarks) section of this README
 - [ ] Create frontend that interacts with the public API from the backend to place orders, see depth of market and
