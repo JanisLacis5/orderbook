@@ -2,9 +2,9 @@
 #include <memory>
 
 // PRIVATE FUNCTION IMPLEMENTATIONS
-trades_t OrderBook::matchLimitOrder(orderPtr_t order) {}
+trades_t Orderbook::matchLimitOrder(orderPtr_t order) {}
 
-trades_t OrderBook::matchMarketOrder(orderPtr_t order) {
+trades_t Orderbook::matchMarketOrder(orderPtr_t order) {
     Side side = order->getSide();
     trades_t trades;
     std::optional<price_t> threshold;
@@ -40,34 +40,31 @@ trades_t OrderBook::matchMarketOrder(orderPtr_t order) {
                 levelData_.erase(currPrice);
         }
 
-        if (orders.empty()) {
+        if (orders.empty())
             it = side == Side::Buy ? ask_.erase(it) : bid_.erase(it);
-        }
     }
     return trades;
 }
 
-microsec_t OrderBook::getCurrTime() const {
+microsec_t Orderbook::getCurrTime() const {
     auto time = std::chrono::system_clock::now().time_since_epoch();
     return std::chrono::duration_cast<microsec_t>(time);
 }
 
-void OrderBook::processAddedOrder(orderPtr_t order) {
+void Orderbook::processAddedOrder(orderPtr_t order) {
     orderId_t orderId = order->getOrderid();
 
     orders_[orderId].order_ = order;
-    if (order->getSide() == Side::Sell) {
+    if (order->getSide() == Side::Sell)
         orders_[orderId].location_ = std::prev(ask_[order->getPrice()].end());
-    }
-    else if (order->getSide() == Side::Buy) {
+    else if (order->getSide() == Side::Buy)
         orders_[orderId].location_ = std::prev(bid_[order->getPrice()].end());
-    }
 
     levelData_[order->getPrice()].volume += order->getInitialQuantity();
     levelData_[order->getPrice()].orderCnt++;
 }
 
-bool OrderBook::canBeFullyFilled(price_t price, quantity_t quantity, Side side) const {
+bool Orderbook::canBeFullyFilled(price_t price, quantity_t quantity, Side side) const {
     if (quantity <= 0)
         throw std::logic_error("Invalid quantity");
     if (!doesCrossSpread(price, side))
@@ -97,7 +94,7 @@ bool OrderBook::canBeFullyFilled(price_t price, quantity_t quantity, Side side) 
     return false;
 }
 
-bool OrderBook::doesCrossSpread(price_t price, Side side) const {
+bool Orderbook::doesCrossSpread(price_t price, Side side) const {
     if (side == Side::Sell) {
         if (bid_.empty())
             return false;
@@ -116,19 +113,17 @@ bool OrderBook::doesCrossSpread(price_t price, Side side) const {
         throw std::logic_error("Invalid side");
 }
 
-void OrderBook::addAtOrderPrice(orderPtr_t order) {
-    if (order->getSide() == Side::Sell) {
+void Orderbook::addAtOrderPrice(orderPtr_t order) {
+    if (order->getSide() == Side::Sell)
         ask_[order->getPrice()].push_back(order);
-    }
-    else if (order->getSide() == Side::Buy) {
+    else if (order->getSide() == Side::Buy)
         bid_[order->getPrice()].push_back(order);
-    }
     else
         throw std::logic_error("Invalid side");
 }
 
 // PUBLIC FUNCTION IMPLEMENTATIONS
-trades_t OrderBook::addOrder(orderPtr_t order) {
+trades_t Orderbook::addOrder(orderPtr_t order) {
     OrderType type = order->getType();
 
     if (type == OrderType::FillAndKill) {
@@ -147,7 +142,7 @@ trades_t OrderBook::addOrder(orderPtr_t order) {
     return matchMarketOrder(order);
 }
 
-void OrderBook::cancelOrder(orderId_t orderId) {
+void Orderbook::cancelOrder(orderId_t orderId) {
     OrderInfo orderInfo = orders_.at(orderId);
     orders_.erase(orderId);
 
@@ -171,7 +166,7 @@ void OrderBook::cancelOrder(orderId_t orderId) {
         levelData_.erase(price);
 }
 
-trades_t OrderBook::modifyOrder(orderPtr_t order, ModifyOrder modifications) {
+trades_t Orderbook::modifyOrder(orderPtr_t order, ModifyOrder modifications) {
     cancelOrder(order->getOrderid());
 
     std::shared_ptr<Order> newOrder =

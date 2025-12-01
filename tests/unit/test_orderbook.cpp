@@ -45,7 +45,7 @@ OTHER:
 
 class OrderBookTest : public testing::Test {
 protected:
-    OrderBook orderbook = OrderBook();
+    Orderbook orderbook = Orderbook();
 };
 
 TEST_F(OrderBookTest, InitialState) {

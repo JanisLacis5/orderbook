@@ -1,6 +1,6 @@
 #include "orderbook.h"
 
 int main() {
-    OrderBook orderbook;
+    Orderbook orderbook;
     return 0;
 }

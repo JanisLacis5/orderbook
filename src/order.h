@@ -27,10 +27,10 @@ public:
 
     quantity_t getFilled() const { return initialQuantity_ - remainingQuantity_; };
     bool isFullyFilled() const { return remainingQuantity_ == 0; }
-    void fill(quantity_t quantity) { 
+    void fill(quantity_t quantity) {
         if (quantity > remainingQuantity_)
             throw std::invalid_argument("cant fill more than the remaining quantity");
-        remainingQuantity_ -= quantity; 
+        remainingQuantity_ -= quantity;
     }
 
 private:

@@ -6,7 +6,7 @@
 #include "types.h"
 #include "usings.h"
 
-class OrderBook {
+class Orderbook {
 public:
     trades_t addOrder(orderPtr_t order);
     void cancelOrder(orderId_t orderId);
