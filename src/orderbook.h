@@ -27,8 +27,8 @@ private:
     std::map<price_t, LevelData> levelData_;
     std::unordered_map<orderId_t, OrderInfo> orders_;
 
-    trades_t passiveMatchOrders();  // TODO: implement
-    trades_t aggressiveMatchOrder(orderPtr_t order);
+    trades_t matchMarketOrder(orderPtr_t order);
+    trades_t matchLimitOrder(orderPtr_t order);
     microsec_t getCurrTime() const;
     void processAddedOrder(orderPtr_t order);
     bool canBeFullyFilled(price_t price, quantity_t quantity, Side side) const;

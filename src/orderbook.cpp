@@ -2,11 +2,9 @@
 #include <memory>
 
 // PRIVATE FUNCTION IMPLEMENTATIONS
-trades_t OrderBook::passiveMatchOrders() {  // TODO: implement
-    return {};
-}
+trades_t OrderBook::matchLimitOrder(orderPtr_t order) {}
 
-trades_t OrderBook::aggressiveMatchOrder(orderPtr_t order) {
+trades_t OrderBook::matchMarketOrder(orderPtr_t order) {
     Side side = order->getSide();
     trades_t trades;
     std::optional<price_t> threshold;
@@ -144,9 +142,9 @@ trades_t OrderBook::addOrder(orderPtr_t order) {
     else if (type == OrderType::GoodTillCancel || type == OrderType::GoodTillEOD) {
         addAtOrderPrice(order);
         processAddedOrder(order);
-        return passiveMatchOrders();
+        return matchLimitOrder(order);
     }
-    return aggressiveMatchOrder(order);
+    return matchMarketOrder(order);
 }
 
 void OrderBook::cancelOrder(orderId_t orderId) {
