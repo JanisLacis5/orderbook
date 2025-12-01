@@ -13,7 +13,7 @@ public:
           type_{type},
           side_{side},
           opentime_{opentime} {
-        if (quantity <= 0)
+        if (quantity == 0)
             throw std::invalid_argument("quantity must be larger than 0");
     }
 
@@ -27,10 +27,10 @@ public:
 
     quantity_t getFilled() const { return initialQuantity_ - remainingQuantity_; };
     bool isFullyFilled() const { return remainingQuantity_ == 0; }
-    void fill(quantity_t quantity) {
-        if (quantity <= 0)
-            throw std::invalid_argument("quantity must be larger than 0");
-        remainingQuantity_ -= quantity;
+    void fill(quantity_t quantity) { 
+        if (quantity > remainingQuantity_)
+            throw std::invalid_argument("cant fill more than the remaining quantity");
+        remainingQuantity_ -= quantity; 
     }
 
 private:
