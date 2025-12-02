@@ -1,5 +1,7 @@
 #include "orderbook.h"
 #include <memory>
+#include <optional>
+#include <stdexcept>
 
 // PRIVATE FUNCTION IMPLEMENTATIONS
 trades_t Orderbook::matchOrder(orderPtr_t order) {
@@ -173,4 +175,42 @@ trades_t Orderbook::modifyOrder(orderPtr_t order, ModifyOrder modifications) {
         std::make_shared<Order>(order->getOrderid(), modifications.quantity, modifications.price, modifications.type,
                                 modifications.side, getCurrTime());
     return addOrder(newOrder);
+}
+
+std::optional<price_t> Orderbook::bestAsk() const {
+    if (ask_.empty()) 
+        return {};
+
+    auto& [price, orders] = *ask_.begin();
+    return price;
+}
+
+std::optional<price_t> Orderbook::bestBid() const {
+    if (bid_.empty())
+        return {};
+
+    auto& [price, orders] = *bid_.begin();
+    return price;
+}
+
+std::map<price_t, Orderbook::LevelData, std::less<price_t>> Orderbook::fullDepthAsk() const {
+    std::map<price_t, LevelData, std::less<price_t>> levels;
+
+    for (const auto& [price, _]: ask_) {
+        const LevelData& data = levelData_.at(price);
+        levels.emplace(price, data);
+    }
+
+    return levels;
+}
+
+std::map<price_t, Orderbook::LevelData, std::greater<price_t>> Orderbook::fullDepthBid() const {
+    std::map<price_t, LevelData, std::greater<price_t>> levels;
+
+    for (const auto& [price, _]: bid_) {
+        const LevelData& data = levelData_.at(price);
+        levels.emplace(price, data);
+    }
+
+    return levels;
 }
