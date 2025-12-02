@@ -1,6 +1,8 @@
 #pragma once
 
+#include <functional>
 #include <map>
+#include <optional>
 #include <unordered_map>
 #include "trade.h"
 #include "types.h"
@@ -11,6 +13,10 @@ public:
     trades_t addOrder(orderPtr_t order);
     void cancelOrder(orderId_t orderId);
     trades_t modifyOrder(orderPtr_t order, ModifyOrder modifications);
+    std::optional<price_t> bestAsk() const;
+    std::optional<price_t> bestBid() const;
+    std::map<price_t, uint32_t, std::less<price_t>> fullDepthAsk() const;
+    std::map<price_t, uint32_t, std::greater<price_t>> fullDepthBid() const;
 
 private:
     struct OrderInfo {

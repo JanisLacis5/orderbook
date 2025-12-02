@@ -4,7 +4,7 @@
 /*
 TODO:
     PASSIVE ORDERS (DO NOT FILL)
-    - test an empty book state
+    - test an empty (initial) book state
     - test one bid / ask without any other orders on the book
     - add multiple orders on the same level to test FIFO - time priority
     - add multiple orders at different price levels and test if the book looks like it should
@@ -48,6 +48,3 @@ protected:
     Orderbook orderbook = Orderbook();
 };
 
-TEST_F(OrderBookTest, InitialState) {
-
-}
