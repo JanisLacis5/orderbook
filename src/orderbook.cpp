@@ -129,6 +129,29 @@ void Orderbook::addAtOrderPrice(orderPtr_t order) {
         throw std::logic_error("Invalid side");
 }
 
+std::vector<LevelView> Orderbook::fullDepth(Side side) const {
+    bool isAsk = side == Side::Sell;
+    std::vector<LevelView> levels;
+    levels.reserve((isAsk ? ask_.size() : bid_.size()));
+
+    auto beg = (isAsk ? ask_.begin() : bid_.begin());
+    auto end = (isAsk ? ask_.end() : bid_.end());
+
+    for (auto it = beg; it != end; it++) {
+        const auto& [price, _] = *it;
+        const LevelData& data = levelData_.at(price);
+
+        LevelView level;
+        level.price = price;
+        level.volume = data.volume;
+        level.orderCnt = data.orderCnt;
+
+        levels.push_back(level);
+    }
+
+    return levels;
+}
+
 // PUBLIC FUNCTION IMPLEMENTATIONS
 trades_t Orderbook::addOrder(orderPtr_t order) {
     OrderType type = order->getType();
@@ -178,7 +201,7 @@ trades_t Orderbook::modifyOrder(orderPtr_t order, ModifyOrder modifications) {
 }
 
 std::optional<price_t> Orderbook::bestAsk() const {
-    if (ask_.empty()) 
+    if (ask_.empty())
         return {};
 
     auto& [price, orders] = *ask_.begin();
@@ -191,26 +214,4 @@ std::optional<price_t> Orderbook::bestBid() const {
 
     auto& [price, orders] = *bid_.begin();
     return price;
-}
-
-std::map<price_t, Orderbook::LevelData, std::less<price_t>> Orderbook::fullDepthAsk() const {
-    std::map<price_t, LevelData, std::less<price_t>> levels;
-
-    for (const auto& [price, _]: ask_) {
-        const LevelData& data = levelData_.at(price);
-        levels.emplace(price, data);
-    }
-
-    return levels;
-}
-
-std::map<price_t, Orderbook::LevelData, std::greater<price_t>> Orderbook::fullDepthBid() const {
-    std::map<price_t, LevelData, std::greater<price_t>> levels;
-
-    for (const auto& [price, _]: bid_) {
-        const LevelData& data = levelData_.at(price);
-        levels.emplace(price, data);
-    }
-
-    return levels;
 }
