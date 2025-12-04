@@ -5,14 +5,23 @@
 
 class OrderbookTest : public testing::Test {
 protected:
-    Orderbook orderbook = Orderbook();
+    Orderbook orderbook;
 
-    void assertBookState() {};
-    void populateBook(size_t bids=1000, size_t asks=1000) {};
-    orderPtr_t generateOrder(price_t price, OrderType type, Side side, quantity_t quantity=1) { return orderPtr_t{}; };
+    void assertBookState() const {}
+    void populateBook(size_t bids=100, size_t asks=100) {}
+    orderPtr_t generateOrder(price_t price, OrderType type, Side side, quantity_t quantity=1) {
+        orderPtr_t order = std::make_shared<Order>(lastOrderId_, quantity, price, type, side, now_);
+        lastOrderId_++;
+        now_++;
+
+        return order;
+    }
+
+    void TearDown() override { assertBookState(); }
 
 private:
-    orderId_t lastOrderId_{};
+    orderId_t lastOrderId_{0};
+    microsec_t now_{0};
 };
 
 class PassiveOrderbookTest : public OrderbookTest {};

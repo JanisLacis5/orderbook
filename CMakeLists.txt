@@ -63,6 +63,7 @@ enable_testing()
 
 add_executable(test_core
     tests/unit/test_order.cpp
+    tests/unit/test_orderbook.cpp
 )
 target_link_libraries(test_core
     PRIVATE
