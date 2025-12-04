@@ -7,7 +7,12 @@ class OrderbookTest : public testing::Test {
 protected:
     Orderbook orderbook;
 
-    void assertBookState() const {}
+    void assertBookState() const {
+        std::optional<price_t> bestBid = orderbook.bestBid();
+        std::optional<price_t> bestAsk = orderbook.bestAsk();
+        if (bestBid.has_value() && bestAsk.has_value())
+            EXPECT_TRUE(bestBid.value() < bestAsk.value());
+    }
     void populateBook(size_t bids=100, size_t asks=100) {}
     orderPtr_t generateOrder(price_t price, OrderType type, Side side, quantity_t quantity=1) {
         orderPtr_t order = std::make_shared<Order>(lastOrderId_, quantity, price, type, side, now_);
@@ -28,9 +33,44 @@ class PassiveOrderbookTest : public OrderbookTest {};
 class MarketOrderbookTest : public OrderbookTest {};
 
 // PASSIVE ORDERS
-TEST_F(PassiveOrderbookTest, InitialState) {}
-TEST_F(PassiveOrderbookTest, OneBidOnEmptyBook) {}
-TEST_F(PassiveOrderbookTest, OneAskOnEmptyBook) {}
+TEST_F(PassiveOrderbookTest, InitialState) {
+    EXPECT_FALSE(orderbook.bestAsk().has_value());
+    EXPECT_FALSE(orderbook.bestBid().has_value());
+    EXPECT_TRUE(orderbook.fullDepthAsk().empty());
+    EXPECT_TRUE(orderbook.fullDepthBid().empty());
+}
+TEST_F(PassiveOrderbookTest, OneBidOnEmptyBook) {
+    price_t price = 100;
+    quantity_t quantity = 1;
+    orderPtr_t order = generateOrder(price, OrderType::GoodTillCancel, Side::Buy, quantity);
+    orderbook.addOrder(order);
+
+    ASSERT_TRUE(orderbook.bestBid().has_value());
+    EXPECT_FALSE(orderbook.bestAsk().has_value());
+    EXPECT_EQ(orderbook.bestBid().value(), price);
+    ASSERT_EQ(orderbook.fullDepthBid().size(), 1);
+    EXPECT_TRUE(orderbook.fullDepthAsk().empty());
+    LevelView level = orderbook.fullDepthBid().front();
+    EXPECT_EQ(level.price, price);
+    EXPECT_EQ(level.volume, quantity);
+    EXPECT_EQ(level.orderCnt, 1);
+}
+TEST_F(PassiveOrderbookTest, OneAskOnEmptyBook) {
+    price_t price = 100;
+    quantity_t quantity = 1;
+    orderPtr_t order = generateOrder(price, OrderType::GoodTillCancel, Side::Sell, quantity);
+    orderbook.addOrder(order);
+
+    ASSERT_TRUE(orderbook.bestAsk().has_value());
+    EXPECT_FALSE(orderbook.bestBid().has_value());
+    EXPECT_EQ(orderbook.bestAsk().value(), price);
+    ASSERT_EQ(orderbook.fullDepthAsk().size(), 1);
+    EXPECT_TRUE(orderbook.fullDepthBid().empty());
+    LevelView level = orderbook.fullDepthAsk().front();
+    EXPECT_EQ(level.price, price);
+    EXPECT_EQ(level.volume, quantity);
+    EXPECT_EQ(level.orderCnt, 1);
+}
 TEST_F(PassiveOrderbookTest, FIFOOnTheSameLevel) {}
 TEST_F(PassiveOrderbookTest, BookStateWithMultipleOrders) {}
 TEST_F(PassiveOrderbookTest, CancelExistentBidOrder) {}
