@@ -7,6 +7,8 @@
 class OrderbookTest : public testing::Test {
 protected:
     Orderbook orderbook;
+    price_t defaultPrice{100};
+    quantity_t defaultQuantity{1};
 
     void assertBookHealthy() const {
         std::optional<price_t> bestBid = orderbook.bestBid();
@@ -46,8 +48,8 @@ protected:
         EXPECT_EQ(obBidVolume, bidVolume);
         EXPECT_EQ(obAskVolume, askVolume);
     }
-    void populateBook(size_t bids=100, size_t asks=100) {}
-    orderPtr_t generateOrder(price_t price, OrderType type, Side side, quantity_t quantity=1) {
+    void populateBook(size_t bids, size_t asks) {}
+    orderPtr_t generateOrder(price_t price, OrderType type, Side side, quantity_t quantity) {
         orderPtr_t order = std::make_shared<Order>(lastOrderId_, quantity, price, type, side, now_);
         lastOrderId_++;
         now_++;
@@ -73,8 +75,8 @@ TEST_F(PassiveOrderbookTest, InitialState) {
     EXPECT_TRUE(orderbook.fullDepthBid().empty());
 }
 TEST_F(PassiveOrderbookTest, OneBidOnEmptyBook) {
-    price_t price = 100;
-    quantity_t quantity = 1;
+    price_t price = defaultPrice;
+    quantity_t quantity = defaultQuantity;
     orderPtr_t order = generateOrder(price, OrderType::GoodTillCancel, Side::Buy, quantity);
     orderbook.addOrder(order);
 
@@ -85,8 +87,8 @@ TEST_F(PassiveOrderbookTest, OneBidOnEmptyBook) {
     EXPECT_EQ(level.orderCnt, 1);
 }
 TEST_F(PassiveOrderbookTest, OneAskOnEmptyBook) {
-    price_t price = 100;
-    quantity_t quantity = 1;
+    price_t price = defaultPrice;
+    quantity_t quantity = defaultQuantity;
     orderPtr_t order = generateOrder(price, OrderType::GoodTillCancel, Side::Sell, quantity);
     orderbook.addOrder(order);
 
@@ -97,9 +99,10 @@ TEST_F(PassiveOrderbookTest, OneAskOnEmptyBook) {
     EXPECT_EQ(level.orderCnt, 1);
 }
 TEST_F(PassiveOrderbookTest, FIFOOnTheSameLevel) {
-    price_t price = 100;
-    orderPtr_t order1 = generateOrder(price, OrderType::GoodTillCancel, Side::Buy);
-    orderPtr_t order2 = generateOrder(price, OrderType::GoodTillCancel, Side::Buy);
+    price_t price = defaultPrice;
+    quantity_t quantity = defaultQuantity;
+    orderPtr_t order1 = generateOrder(price, OrderType::GoodTillCancel, Side::Buy, quantity);
+    orderPtr_t order2 = generateOrder(price, OrderType::GoodTillCancel, Side::Buy, quantity);
 }
 TEST_F(PassiveOrderbookTest, BookStateWithMultipleOrders) {}
 TEST_F(PassiveOrderbookTest, CancelExistentBidOrder) {}
