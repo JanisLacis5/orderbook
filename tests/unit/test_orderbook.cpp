@@ -184,7 +184,49 @@ TEST_F(PassiveOrderbookTest, FIFOOnTheSameLevel) {
     EXPECT_EQ(expectedLevelState, levels.front());
 }
 
-TEST_F(PassiveOrderbookTest, BookStateWithMultipleOrders) {}
+TEST_F(PassiveOrderbookTest, BookStateWithMultipleOrders) {
+    price_t price1 = defaultPrice;
+    price_t price2 = defaultPrice + 1;
+    price_t price3 = defaultPrice + 2;
+    price_t price4 = defaultPrice + 3;
+    quantity_t q1 = defaultQuantity;
+    quantity_t q2 = defaultQuantity + 1;
+    quantity_t q3 = defaultQuantity + 2;
+    quantity_t q4 = defaultQuantity + 3;
+    orderPtr_t order1 = generateOrder(price1, OrderType::GoodTillCancel, Side::Buy, q1);
+    orderPtr_t order2 = generateOrder(price2, OrderType::GoodTillCancel, Side::Buy, q2);
+    orderPtr_t order3 = generateOrder(price3, OrderType::GoodTillCancel, Side::Sell, q3);
+    orderPtr_t order4 = generateOrder(price4, OrderType::GoodTillCancel, Side::Sell, q4);
+
+    // Make sure that none of these orders are filled - they stay on the book
+    ASSERT_TRUE(orderbook.addOrder(order1).empty()); 
+    ASSERT_TRUE(orderbook.addOrder(order2).empty()); 
+    ASSERT_TRUE(orderbook.addOrder(order3).empty());
+    ASSERT_TRUE(orderbook.addOrder(order4).empty());
+
+    BookState expectedBookState {
+        .ask {.orderCnt = 2, .volume = q3 + q4, .depth = 2, .bestPrice = std::min(price3, price4)},
+        .bid {.orderCnt = 2, .volume = q1 + q2, .depth = 2, .bestPrice = std::max(price1, price2)},
+    };
+    assertBookState(expectedBookState);
+    
+    LevelState expLevel1 {.price = price1, .volume = q1, .orderCnt = 1};
+    LevelState expLevel2 {.price = price2, .volume = q2, .orderCnt = 1};
+    LevelState expLevel3 {.price = price3, .volume = q3, .orderCnt = 1};
+    LevelState expLevel4 {.price = price4, .volume = q4, .orderCnt = 1};
+    std::vector<LevelView> bidDepth = orderbook.fullDepthBid();
+    std::vector<LevelView> askDepth = orderbook.fullDepthAsk();
+
+    ASSERT_EQ(bidDepth.size(), 2);
+    ASSERT_EQ(askDepth.size(), 2);
+    // Bids are expected to be in descending order (largest (bestBid) price as the first level)
+    EXPECT_EQ(expLevel2, bidDepth[0]);
+    EXPECT_EQ(expLevel1, bidDepth[1]);
+    // Asks are ascending (lowest (bestAsk) price first level)
+    EXPECT_EQ(expLevel3, askDepth[0]);
+    EXPECT_EQ(expLevel4, askDepth[1]);
+}
+
 TEST_F(PassiveOrderbookTest, CancelExistentBidOrder) {}
 TEST_F(PassiveOrderbookTest, CancelExistentAskOrder) {}
 TEST_F(PassiveOrderbookTest, CancelNonExistentOrder) {}
