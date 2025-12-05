@@ -24,6 +24,16 @@ struct BookState {
     }
 };
 
+struct LevelState {
+    price_t price{0};
+    uint32_t volume{0};
+    uint32_t orderCnt{0};
+
+    bool operator==(const LevelView& other) const {
+        return price == other.price && volume == other.volume && orderCnt == other.orderCnt;
+    }
+};
+
 class OrderbookTest : public testing::Test {
 protected:
     Orderbook orderbook;
@@ -85,6 +95,7 @@ TEST_F(PassiveOrderbookTest, InitialState) {
     EXPECT_TRUE(orderbook.fullDepthAsk().empty());
     EXPECT_TRUE(orderbook.fullDepthBid().empty());
 }
+
 TEST_F(PassiveOrderbookTest, OneBidOnEmptyBook) {
     price_t price = defaultPrice;
     quantity_t quantity = defaultQuantity;
@@ -100,13 +111,13 @@ TEST_F(PassiveOrderbookTest, OneBidOnEmptyBook) {
             .bestPrice = price,
         },
     };
-
     assertBookState(expectedState);
-    LevelView level = orderbook.fullDepthBid().front();
-    EXPECT_EQ(level.price, price);
-    EXPECT_EQ(level.volume, quantity);
-    EXPECT_EQ(level.orderCnt, 1);
+
+    LevelState expectedLevelState = {.price = price, .volume = quantity, .orderCnt = 1};
+    LevelView actualLevelState = orderbook.fullDepthBid().front();
+    EXPECT_EQ(actualLevelState, expectedLevelState);
 }
+
 TEST_F(PassiveOrderbookTest, OneAskOnEmptyBook) {
     price_t price = defaultPrice;
     quantity_t quantity = defaultQuantity;
@@ -122,19 +133,20 @@ TEST_F(PassiveOrderbookTest, OneAskOnEmptyBook) {
         },
         .bid {},
     };
-
     assertBookState(expectedState);
-    LevelView level = orderbook.fullDepthAsk().front();
-    EXPECT_EQ(level.price, price);
-    EXPECT_EQ(level.volume, quantity);
-    EXPECT_EQ(level.orderCnt, 1);
+
+    LevelState expectedLevelState = {.price = price, .volume = quantity, .orderCnt = 1};
+    LevelView actualLevelState = orderbook.fullDepthAsk().front();
+    EXPECT_EQ(actualLevelState, expectedLevelState);
 }
+
 TEST_F(PassiveOrderbookTest, FIFOOnTheSameLevel) {
     price_t price = defaultPrice;
     quantity_t quantity = defaultQuantity;
     orderPtr_t order1 = generateOrder(price, OrderType::GoodTillCancel, Side::Buy, quantity);
     orderPtr_t order2 = generateOrder(price, OrderType::GoodTillCancel, Side::Buy, quantity);
 }
+
 TEST_F(PassiveOrderbookTest, BookStateWithMultipleOrders) {}
 TEST_F(PassiveOrderbookTest, CancelExistentBidOrder) {}
 TEST_F(PassiveOrderbookTest, CancelExistentAskOrder) {}
