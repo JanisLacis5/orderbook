@@ -103,7 +103,6 @@ TEST_F(PassiveOrderbookTest, OneBidOnEmptyBook) {
     orderbook.addOrder(order);
 
     BookState expectedState {
-        .ask {},
         .bid {
             .orderCnt = 1,
             .volume = quantity,
@@ -131,7 +130,6 @@ TEST_F(PassiveOrderbookTest, OneAskOnEmptyBook) {
             .depth = 1,
             .bestPrice = price,
         },
-        .bid {},
     };
     assertBookState(expectedState);
 
