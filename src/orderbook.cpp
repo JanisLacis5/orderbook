@@ -2,6 +2,8 @@
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include "order.h"
+#include "usings.h"
 
 // PRIVATE FUNCTION IMPLEMENTATIONS
 trades_t Orderbook::matchOrder(orderPtr_t order) {
@@ -191,12 +193,18 @@ void Orderbook::cancelOrder(orderId_t orderId) {
         levelData_.erase(price);
 }
 
-trades_t Orderbook::modifyOrder(orderPtr_t order, ModifyOrder modifications) {
-    cancelOrder(order->getOrderId());
+trades_t Orderbook::modifyOrder(orderId_t orderId, ModifyOrder modifications) {
+    orderPtr_t oldOrder = orders_.at(orderId).order_;
 
-    std::shared_ptr<Order> newOrder =
-        std::make_shared<Order>(order->getOrderId(), modifications.quantity, modifications.price, modifications.type,
-                                modifications.side, getCurrTime());
+    quantity_t quantity =
+        modifications.quantity.has_value() ? modifications.quantity.value() : oldOrder->getRemainingQuantity();
+    price_t price = modifications.price.has_value() ? modifications.price.value() : oldOrder->getPrice();
+    OrderType type = modifications.type.has_value() ? modifications.type.value() : oldOrder->getType();
+    Side side = modifications.side.has_value() ? modifications.side.value() : oldOrder->getSide();
+
+    cancelOrder(orderId);
+
+    orderPtr_t newOrder = std::make_shared<Order>(orderId, quantity, price, type, side, getCurrTime());
     return addOrder(newOrder);
 }
 

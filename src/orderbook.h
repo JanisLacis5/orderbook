@@ -18,7 +18,7 @@ class Orderbook {
 public:
     trades_t addOrder(orderPtr_t order);
     void cancelOrder(orderId_t orderId);
-    trades_t modifyOrder(orderPtr_t order, ModifyOrder modifications);
+    trades_t modifyOrder(orderId_t orderId, ModifyOrder modifications);
     std::optional<price_t> bestAsk() const;
     std::optional<price_t> bestBid() const;
     std::vector<LevelView> fullDepthAsk() const { return fullDepth(Side::Sell); };

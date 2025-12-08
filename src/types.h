@@ -7,8 +7,8 @@ enum OrderType { Market, GoodTillCancel, GoodTillEOD, FillOrKill, FillAndKill };
 enum Side { Buy, Sell };
 
 struct ModifyOrder {
-    price_t price;
-    quantity_t quantity;
-    OrderType type;
-    Side side;
+    std::optional<price_t> price{};
+    std::optional<quantity_t> quantity{};
+    std::optional<OrderType> type{};
+    std::optional<Side> side{};
 };
