@@ -339,6 +339,7 @@ TEST_F(PassiveOrderbookTest, CancelOrderWhichIsNotTheLastAtLevel) {
 TEST_F(PassiveOrderbookTest, ModifyQuantityUp) {}
 TEST_F(PassiveOrderbookTest, ModifyQuantityDown) {}
 TEST_F(PassiveOrderbookTest, ModifyPriceMovesToDifferentLevel) {}
+TEST_F(PassiveOrderbookTest, ModifyPriceStaysAtSameLevel) {}
 TEST_F(PassiveOrderbookTest, LimitOrderFullyFilledWithoutResting) {}
 TEST_F(PassiveOrderbookTest, LimitOrderDoesNotTradeAtWorsePriceThanLimit) {}
 TEST_F(PassiveOrderbookTest, LimitOrderRestsOnTheBookIfDoesntCrossSpread) {}
