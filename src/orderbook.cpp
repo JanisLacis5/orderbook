@@ -1,5 +1,4 @@
 #include "orderbook.h"
-#include <memory>
 #include <optional>
 #include <stdexcept>
 #include "order.h"
@@ -8,6 +7,7 @@
 // PRIVATE FUNCTION IMPLEMENTATIONS
 trades_t Orderbook::matchOrder(orderPtr_t order) {
     Side side = order->getSide();
+    orderId_t orderId = order->getOrderId();
     trades_t trades;
     std::optional<price_t> threshold;
 
@@ -27,7 +27,8 @@ trades_t Orderbook::matchOrder(orderPtr_t order) {
             orderPtr_t opposite = orders.front();
             quantity_t toFill = std::min(order->getRemainingQuantity(), opposite->getRemainingQuantity());
 
-            Trade trade = (side == Side::Buy ? newTrade(order, opposite, toFill) : newTrade(opposite, order, toFill));
+            Trade trade = (side == Side::Buy ? newTrade(orderId, opposite->getOrderId(), toFill)
+                                             : newTrade(opposite->getOrderId(), orderId, toFill));
             trades.push_back(trade);
 
             opposite->fill(toFill);
@@ -155,8 +156,8 @@ std::vector<LevelView> Orderbook::fullDepth(Side side) const {
 }
 
 // PUBLIC FUNCTION IMPLEMENTATIONS
-trades_t Orderbook::addOrder(orderPtr_t order) {
-    OrderType type = order->getType();
+std::pair<orderId_t, trades_t> Orderbook::addOrder(quantity_t quantity, price_t price, OrderType type, Side side) {
+    orderPtr_t order = newOrder(quantity, price, type, side);
 
     if (type == OrderType::FillAndKill) {
         if (!doesCrossSpread(order->getPrice(), order->getSide()))
@@ -166,7 +167,7 @@ trades_t Orderbook::addOrder(orderPtr_t order) {
         if (!canBeFullyFilled(order->getPrice(), order->getInitialQuantity(), order->getSide()))
             return {};
     }
-    return matchOrder(order);
+    return {order->getOrderId(), matchOrder(order)};
 }
 
 void Orderbook::cancelOrder(orderId_t orderId) {
@@ -193,7 +194,7 @@ void Orderbook::cancelOrder(orderId_t orderId) {
         levelData_.erase(price);
 }
 
-trades_t Orderbook::modifyOrder(orderId_t orderId, ModifyOrder modifications) {
+std::pair<orderId_t, trades_t> Orderbook::modifyOrder(orderId_t orderId, ModifyOrder modifications) {
     orderPtr_t oldOrder = orders_.at(orderId).order_;
 
     quantity_t quantity =
@@ -203,9 +204,7 @@ trades_t Orderbook::modifyOrder(orderId_t orderId, ModifyOrder modifications) {
     Side side = modifications.side.has_value() ? modifications.side.value() : oldOrder->getSide();
 
     cancelOrder(orderId);
-
-    orderPtr_t newOrder = std::make_shared<Order>(orderId, quantity, price, type, side, getCurrTime());
-    return addOrder(newOrder);
+    return addOrder(quantity, price, type, side);
 }
 
 std::optional<price_t> Orderbook::bestAsk() const {

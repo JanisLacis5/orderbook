@@ -4,6 +4,7 @@
 #include <map>
 #include <optional>
 #include <unordered_map>
+#include "order.h"
 #include "trade.h"
 #include "types.h"
 #include "usings.h"
@@ -16,9 +17,9 @@ struct LevelView {
 
 class Orderbook {
 public:
-    trades_t addOrder(orderPtr_t order);
+    std::pair<orderId_t, trades_t> addOrder(quantity_t quantity, price_t price, OrderType type, Side side);
     void cancelOrder(orderId_t orderId);
-    trades_t modifyOrder(orderId_t orderId, ModifyOrder modifications);
+    std::pair<orderId_t, trades_t> modifyOrder(orderId_t orderId, ModifyOrder modifications);
     std::optional<price_t> bestAsk() const;
     std::optional<price_t> bestBid() const;
     std::vector<LevelView> fullDepthAsk() const { return fullDepth(Side::Sell); };
@@ -39,6 +40,7 @@ private:
     std::map<price_t, LevelData> levelData_;
     std::unordered_map<orderId_t, OrderInfo> orders_;
 
+    orderPtr_t newOrder(quantity_t quantity, price_t price, OrderType type, Side side);
     trades_t matchOrder(orderPtr_t order);
     microsec_t getCurrTime() const;
     void processAddedOrder(orderPtr_t order);
