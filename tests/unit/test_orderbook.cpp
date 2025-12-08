@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <numeric>
+#include <stdexcept>
 #include "order.h"
 #include "orderbook.h"
 #include "usings.h"
@@ -244,6 +245,9 @@ TEST_F(PassiveOrderbookTest, CancelExistentBidOrder) {
     ASSERT_EQ(bidDepth.size(), 1);
     EXPECT_TRUE(orderbook.fullDepthAsk().empty());
     EXPECT_EQ(expLevel, bidDepth[0]);
+    ASSERT_TRUE(orderbook.bestBid().has_value());
+    EXPECT_FALSE(orderbook.bestAsk().has_value());
+    EXPECT_EQ(orderbook.bestBid().value(), price);
 
     orderbook.cancelOrder(bidOrderToCancel->getOrderId());
     expectedBookState = BookState{};
@@ -251,6 +255,8 @@ TEST_F(PassiveOrderbookTest, CancelExistentBidOrder) {
 
     EXPECT_TRUE(orderbook.fullDepthAsk().empty());
     EXPECT_TRUE(orderbook.fullDepthBid().empty());
+    EXPECT_FALSE(orderbook.bestAsk().has_value());
+    EXPECT_FALSE(orderbook.bestBid().has_value());
     EXPECT_FALSE(bidOrderToCancel->isFullyFilled());
     EXPECT_EQ(bidOrderToCancel->getRemainingQuantity(), bidOrderToCancel->getInitialQuantity());
 }
@@ -272,6 +278,9 @@ TEST_F(PassiveOrderbookTest, CancelExistentAskOrder) {
     ASSERT_EQ(askDepth.size(), 1);
     EXPECT_TRUE(orderbook.fullDepthBid().empty());
     EXPECT_EQ(expLevel, askDepth[0]);
+    ASSERT_TRUE(orderbook.bestAsk().has_value());
+    EXPECT_FALSE(orderbook.bestBid().has_value());
+    EXPECT_EQ(orderbook.bestAsk().value(), price);
 
     orderbook.cancelOrder(askOrderToCancel->getOrderId());
     expectedBookState = BookState{};
@@ -279,11 +288,18 @@ TEST_F(PassiveOrderbookTest, CancelExistentAskOrder) {
 
     EXPECT_TRUE(orderbook.fullDepthAsk().empty());
     EXPECT_TRUE(orderbook.fullDepthBid().empty());
+    EXPECT_FALSE(orderbook.bestAsk().has_value());
+    EXPECT_FALSE(orderbook.bestBid().has_value());
     EXPECT_FALSE(askOrderToCancel->isFullyFilled());
     EXPECT_EQ(askOrderToCancel->getRemainingQuantity(), askOrderToCancel->getInitialQuantity());
 }
 
-TEST_F(PassiveOrderbookTest, CancelNonExistentOrder) {}
+TEST_F(PassiveOrderbookTest, CancelNonExistentOrder) {
+    ASSERT_TRUE(orderbook.fullDepthAsk().empty());
+    ASSERT_TRUE(orderbook.fullDepthBid().empty());
+    EXPECT_THROW(orderbook.cancelOrder(100), std::out_of_range);
+}
+
 TEST_F(PassiveOrderbookTest, CancelTheOnlyOrderAtLevel) {}
 TEST_F(PassiveOrderbookTest, ModifyQuantityUp) {}
 TEST_F(PassiveOrderbookTest, ModifyQuantityDown) {}
