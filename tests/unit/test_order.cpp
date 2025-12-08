@@ -22,7 +22,7 @@ TEST_F(OrderTest, ConstructorInvalidQuantity) {
 }
 
 TEST_F(OrderTest, Constructor) {
-    EXPECT_EQ(order.getOrderid(), 1);
+    EXPECT_EQ(order.getOrderId(), 1);
     EXPECT_EQ(order.getInitialQuantity(), 100);
     EXPECT_EQ(order.getRemainingQuantity(), 100);
     EXPECT_EQ(order.getPrice(), 12345);

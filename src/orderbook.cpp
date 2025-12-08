@@ -59,7 +59,7 @@ microsec_t Orderbook::getCurrTime() const {
 }
 
 void Orderbook::processAddedOrder(orderPtr_t order) {
-    orderId_t orderId = order->getOrderid();
+    orderId_t orderId = order->getOrderId();
 
     orders_[orderId].order_ = order;
     if (order->getSide() == Side::Sell)
@@ -192,10 +192,10 @@ void Orderbook::cancelOrder(orderId_t orderId) {
 }
 
 trades_t Orderbook::modifyOrder(orderPtr_t order, ModifyOrder modifications) {
-    cancelOrder(order->getOrderid());
+    cancelOrder(order->getOrderId());
 
     std::shared_ptr<Order> newOrder =
-        std::make_shared<Order>(order->getOrderid(), modifications.quantity, modifications.price, modifications.type,
+        std::make_shared<Order>(order->getOrderId(), modifications.quantity, modifications.price, modifications.type,
                                 modifications.side, getCurrTime());
     return addOrder(newOrder);
 }

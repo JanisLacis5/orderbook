@@ -17,7 +17,7 @@ public:
             throw std::invalid_argument("quantity must be larger than 0");
     }
 
-    orderId_t getOrderid() const { return orderid_; }
+    orderId_t getOrderId() const { return orderid_; }
     quantity_t getInitialQuantity() const { return initialQuantity_; }
     quantity_t getRemainingQuantity() const { return remainingQuantity_; }
     price_t getPrice() const { return price_; }

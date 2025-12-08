@@ -227,8 +227,62 @@ TEST_F(PassiveOrderbookTest, BookStateWithMultipleOrders) {
     EXPECT_EQ(expLevel4, askDepth[1]);
 }
 
-TEST_F(PassiveOrderbookTest, CancelExistentBidOrder) {}
-TEST_F(PassiveOrderbookTest, CancelExistentAskOrder) {}
+TEST_F(PassiveOrderbookTest, CancelExistentBidOrder) {
+    price_t price = defaultPrice;
+    quantity_t q = defaultQuantity;
+    orderPtr_t bidOrderToCancel = generateOrder(price, OrderType::GoodTillCancel, Side::Buy, q);
+    ASSERT_TRUE(orderbook.addOrder(bidOrderToCancel).empty());
+
+    BookState expectedBookState {
+        .bid {.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = price},
+    };
+    assertBookState(expectedBookState);
+
+    LevelState expLevel {.price = price, .volume = q, .orderCnt = 1};
+    std::vector<LevelView> bidDepth = orderbook.fullDepthBid();
+    
+    ASSERT_EQ(bidDepth.size(), 1);
+    EXPECT_TRUE(orderbook.fullDepthAsk().empty());
+    EXPECT_EQ(expLevel, bidDepth[0]);
+
+    orderbook.cancelOrder(bidOrderToCancel->getOrderId());
+    expectedBookState = BookState{};
+    assertBookState(expectedBookState);
+
+    EXPECT_TRUE(orderbook.fullDepthAsk().empty());
+    EXPECT_TRUE(orderbook.fullDepthBid().empty());
+    EXPECT_FALSE(bidOrderToCancel->isFullyFilled());
+    EXPECT_EQ(bidOrderToCancel->getRemainingQuantity(), bidOrderToCancel->getInitialQuantity());
+}
+
+TEST_F(PassiveOrderbookTest, CancelExistentAskOrder) {
+    price_t price = defaultPrice;
+    quantity_t q = defaultQuantity;
+    orderPtr_t askOrderToCancel = generateOrder(price, OrderType::GoodTillCancel, Side::Sell, q);
+    ASSERT_TRUE(orderbook.addOrder(askOrderToCancel).empty());
+
+    BookState expectedBookState {
+        .ask {.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = price},
+    };
+    assertBookState(expectedBookState);
+
+    LevelState expLevel {.price = price, .volume = q, .orderCnt = 1};
+    std::vector<LevelView> askDepth = orderbook.fullDepthAsk();
+    
+    ASSERT_EQ(askDepth.size(), 1);
+    EXPECT_TRUE(orderbook.fullDepthBid().empty());
+    EXPECT_EQ(expLevel, askDepth[0]);
+
+    orderbook.cancelOrder(askOrderToCancel->getOrderId());
+    expectedBookState = BookState{};
+    assertBookState(expectedBookState);
+
+    EXPECT_TRUE(orderbook.fullDepthAsk().empty());
+    EXPECT_TRUE(orderbook.fullDepthBid().empty());
+    EXPECT_FALSE(askOrderToCancel->isFullyFilled());
+    EXPECT_EQ(askOrderToCancel->getRemainingQuantity(), askOrderToCancel->getInitialQuantity());
+}
+
 TEST_F(PassiveOrderbookTest, CancelNonExistentOrder) {}
 TEST_F(PassiveOrderbookTest, CancelTheOnlyOrderAtLevel) {}
 TEST_F(PassiveOrderbookTest, ModifyQuantityUp) {}
