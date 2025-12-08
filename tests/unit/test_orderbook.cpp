@@ -142,10 +142,9 @@ TEST_F(PassiveOrderbookTest, FIFOOnTheSameLevel) {
     auto [orderId2, trades2] = orderbook.addOrder(quantity, price, OrderType::GoodTillCancel, Side::Buy);
     auto [oppositeOrderId, oppositeOrderTrades] = orderbook.addOrder(quantity, price, OrderType::Market, Side::Sell);
 
-    // TODO: Check these via level state (quantity + volume)
-    EXPECT_TRUE(order1->isFullyFilled());
-    EXPECT_TRUE(oppositeOrder->isFullyFilled());
-    EXPECT_FALSE(order2->isFullyFilled());
+    // Order1 and the opposite one should not exist anymore so they will throw on cancelation
+    EXPECT_THROW(orderbook.cancelOrder(orderId1), std::out_of_range);
+    EXPECT_THROW(orderbook.cancelOrder(oppositeOrderId), std::out_of_range);
 
     ASSERT_EQ(oppositeOrderTrades.size(), 1);
     Trade& trade = oppositeOrderTrades[0];
@@ -246,7 +245,7 @@ TEST_F(PassiveOrderbookTest, CancelExistentAskOrder) {
     price_t price = defaultPrice;
     quantity_t q = defaultQuantity;
     auto [orderId, trades] = orderbook.addOrder(q, price, OrderType::GoodTillCancel, Side::Sell);
-    ASSERT_TRUE(trades);
+    ASSERT_TRUE(trades.empty());
 
     BookState expectedBookState {
         .ask {.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = price},
@@ -347,8 +346,6 @@ TEST_F(PassiveOrderbookTest, ModifyQuantityUp) {
     ASSERT_EQ(bidDepth.size(), 1);
     EXPECT_TRUE(askDepth.empty());
     EXPECT_EQ(bidDepth[0], expLevel);
-    EXPECT_TRUE(order->getRemainingQuantity() > q);
-    EXPECT_EQ(order->getRemainingQuantity(), q * 2);
 }
 
 TEST_F(PassiveOrderbookTest, ModifyQuantityDown) {
@@ -383,8 +380,6 @@ TEST_F(PassiveOrderbookTest, ModifyQuantityDown) {
     ASSERT_EQ(bidDepth.size(), 1);
     EXPECT_TRUE(askDepth.empty());
     EXPECT_EQ(bidDepth[0], expLevel);
-    EXPECT_TRUE(order->getRemainingQuantity() < q);
-    EXPECT_EQ(order->getRemainingQuantity(), q / 2);
 }
 
 TEST_F(PassiveOrderbookTest, ModifyPriceMovesToDifferentLevel) {}

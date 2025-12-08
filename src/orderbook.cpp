@@ -29,14 +29,16 @@ trades_t Orderbook::matchOrder(orderPtr_t order) {
 
             Trade trade = (side == Side::Buy ? newTrade(orderId, opposite->getOrderId(), toFill)
                                              : newTrade(opposite->getOrderId(), orderId, toFill));
-            trades.push_back(trade);
 
+            trades.push_back(trade);
             opposite->fill(toFill);
             order->fill(toFill);
             levelData_[currPrice].volume -= toFill;
+
             if (opposite->isFullyFilled()) {
                 levelData_[currPrice].orderCnt--;
                 orders.pop_front();
+                orders_.erase(opposite->getOrderId());
             }
 
             if (levelData_.at(currPrice).orderCnt == 0)
@@ -53,6 +55,9 @@ trades_t Orderbook::matchOrder(orderPtr_t order) {
         addAtOrderPrice(order);
         processAddedOrder(order);
     }
+    else if (order->isFullyFilled())
+        orders_.erase(orderId);
+
     return trades;
 }
 
@@ -155,6 +160,11 @@ std::vector<LevelView> Orderbook::fullDepth(Side side) const {
     return levels;
 }
 
+orderPtr_t Orderbook::newOrder(quantity_t quantity, price_t price, OrderType type, Side side) {
+    lastOrderId_++;
+    return std::make_shared<Order>(lastOrderId_, quantity, price, type, side, getCurrTime());
+}
+
 // PUBLIC FUNCTION IMPLEMENTATIONS
 std::pair<orderId_t, trades_t> Orderbook::addOrder(quantity_t quantity, price_t price, OrderType type, Side side) {
     orderPtr_t order = newOrder(quantity, price, type, side);
@@ -170,7 +180,11 @@ std::pair<orderId_t, trades_t> Orderbook::addOrder(quantity_t quantity, price_t 
     return {order->getOrderId(), matchOrder(order)};
 }
 
+#include <iostream>
 void Orderbook::cancelOrder(orderId_t orderId) {
+    for (auto& orderInfo : orders_) {
+        std::cout << orderInfo.second.order_->getOrderId() << std::endl;
+    }
     OrderInfo orderInfo = orders_.at(orderId);
     orders_.erase(orderId);
 
