@@ -12,7 +12,8 @@ struct SideState {
     std::optional<price_t> bestPrice{};
 
     bool operator==(const SideState& other) const {
-        return orderCnt == other.orderCnt && volume == other.volume && depth == other.depth && bestPrice == other.bestPrice;
+        return orderCnt == other.orderCnt && volume == other.volume && depth == other.depth &&
+               bestPrice == other.bestPrice;
     }
 };
 
@@ -20,9 +21,7 @@ struct BookState {
     SideState ask{};
     SideState bid{};
 
-    bool operator==(const BookState& other) const {
-        return ask == other.ask && bid == other.bid;
-    }
+    bool operator==(const BookState& other) const { return ask == other.ask && bid == other.bid; }
 };
 
 struct LevelState {
@@ -63,19 +62,21 @@ protected:
         auto cntVolume = [](size_t cnt, const LevelView& level) { return cnt + level.volume; };
         auto cntOrders = [](size_t cnt, const LevelView& level) { return cnt + level.orderCnt; };
 
-        BookState actualState {
-            .ask = {
-                .orderCnt = std::accumulate(askDepth.begin(), askDepth.end(), 0u, cntOrders),
-                .volume = std::accumulate(askDepth.begin(), askDepth.end(), 0u, cntVolume),
-                .depth = static_cast<uint32_t>(askDepth.size()),
-                .bestPrice = orderbook.bestAsk(),
-            },
-            .bid = {
-                .orderCnt = std::accumulate(bidDepth.begin(), bidDepth.end(), 0u, cntOrders),
-                .volume = std::accumulate(bidDepth.begin(), bidDepth.end(), 0u, cntVolume),
-                .depth = static_cast<uint32_t>(bidDepth.size()),
-                .bestPrice = orderbook.bestBid(),
-            },
+        BookState actualState{
+            .ask =
+                {
+                    .orderCnt = std::accumulate(askDepth.begin(), askDepth.end(), 0u, cntOrders),
+                    .volume = std::accumulate(askDepth.begin(), askDepth.end(), 0u, cntVolume),
+                    .depth = static_cast<uint32_t>(askDepth.size()),
+                    .bestPrice = orderbook.bestAsk(),
+                },
+            .bid =
+                {
+                    .orderCnt = std::accumulate(bidDepth.begin(), bidDepth.end(), 0u, cntOrders),
+                    .volume = std::accumulate(bidDepth.begin(), bidDepth.end(), 0u, cntVolume),
+                    .depth = static_cast<uint32_t>(bidDepth.size()),
+                    .bestPrice = orderbook.bestBid(),
+                },
         };
 
         EXPECT_EQ(expecetedState, actualState);
@@ -98,10 +99,11 @@ TEST_F(PassiveOrderbookTest, InitialState) {
 TEST_F(PassiveOrderbookTest, OneBidOnEmptyBook) {
     price_t price = defaultPrice;
     quantity_t quantity = defaultQuantity;
-    auto [orderId, trades] = orderbook.addOrder(quantity, price, OrderType::GoodTillCancel, Side::Buy);
+    auto [orderId, trades] =
+        orderbook.addOrder(quantity, price, OrderType::GoodTillCancel, Side::Buy);
 
-    BookState expectedState {
-        .bid {
+    BookState expectedState{
+        .bid{
             .orderCnt = 1,
             .volume = quantity,
             .depth = 1,
@@ -118,10 +120,11 @@ TEST_F(PassiveOrderbookTest, OneBidOnEmptyBook) {
 TEST_F(PassiveOrderbookTest, OneAskOnEmptyBook) {
     price_t price = defaultPrice;
     quantity_t quantity = defaultQuantity;
-    auto [orderId, trades] = orderbook.addOrder(quantity, price, OrderType::GoodTillCancel, Side::Sell);
+    auto [orderId, trades] =
+        orderbook.addOrder(quantity, price, OrderType::GoodTillCancel, Side::Sell);
 
-    BookState expectedState {
-        .ask {
+    BookState expectedState{
+        .ask{
             .orderCnt = 1,
             .volume = quantity,
             .depth = 1,
@@ -130,29 +133,33 @@ TEST_F(PassiveOrderbookTest, OneAskOnEmptyBook) {
     };
     assertBookState(expectedState);
 
-    LevelState expectedLevelState {.price = price, .volume = quantity, .orderCnt = 1};
+    LevelState expectedLevelState{.price = price, .volume = quantity, .orderCnt = 1};
     EXPECT_EQ(expectedLevelState, orderbook.fullDepthAsk().front());
 }
 
 TEST_F(PassiveOrderbookTest, FIFOOnTheSameLevel) {
     price_t price = defaultPrice;
     quantity_t quantity = defaultQuantity;
-    
-    auto [orderId1, trades1] = orderbook.addOrder(quantity, price, OrderType::GoodTillCancel, Side::Buy);
-    auto [orderId2, trades2] = orderbook.addOrder(quantity, price, OrderType::GoodTillCancel, Side::Buy);
-    auto [oppositeOrderId, oppositeOrderTrades] = orderbook.addOrder(quantity, price, OrderType::Market, Side::Sell);
 
-    // Order1 and the opposite one should not exist anymore so they will throw on cancelation
+    auto [orderId1, trades1] =
+        orderbook.addOrder(quantity, price, OrderType::GoodTillCancel, Side::Buy);
+    auto [orderId2, trades2] =
+        orderbook.addOrder(quantity, price, OrderType::GoodTillCancel, Side::Buy);
+    auto [oppositeOrderId, oppositeOrderTrades] =
+        orderbook.addOrder(quantity, price, OrderType::Market, Side::Sell);
+
+    // Order1 and the opposite one should not exist anymore so they will throw
+    // on cancelation
     EXPECT_THROW(orderbook.cancelOrder(orderId1), std::out_of_range);
     EXPECT_THROW(orderbook.cancelOrder(oppositeOrderId), std::out_of_range);
 
     ASSERT_EQ(oppositeOrderTrades.size(), 1);
     Trade& trade = oppositeOrderTrades[0];
-    TradeState expectedTrade {.seller = oppositeOrderId, .buyer = orderId1, .quantity = quantity};
+    TradeState expectedTrade{.seller = oppositeOrderId, .buyer = orderId1, .quantity = quantity};
     EXPECT_EQ(trade, expectedTrade);
 
-    BookState expectedBookState {
-        .bid {
+    BookState expectedBookState{
+        .bid{
             .orderCnt = 1,
             .volume = quantity,
             .depth = 1,
@@ -161,7 +168,7 @@ TEST_F(PassiveOrderbookTest, FIFOOnTheSameLevel) {
     };
     assertBookState(expectedBookState);
 
-    LevelState expectedLevelState {.price = price, .volume = quantity, .orderCnt = 1};
+    LevelState expectedLevelState{.price = price, .volume = quantity, .orderCnt = 1};
     std::vector<LevelView> levels = orderbook.fullDepthBid();
     ASSERT_EQ(levels.size(), 1);
     EXPECT_EQ(expectedLevelState, levels.front());
@@ -178,31 +185,34 @@ TEST_F(PassiveOrderbookTest, BookStateWithMultipleOrders) {
     quantity_t q4 = defaultQuantity + 3;
     auto [orderId1, trades1] = orderbook.addOrder(q1, price1, OrderType::GoodTillCancel, Side::Buy);
     auto [orderId2, trades2] = orderbook.addOrder(q2, price2, OrderType::GoodTillCancel, Side::Buy);
-    auto [orderId3, trades3] = orderbook.addOrder(q3, price3, OrderType::GoodTillCancel, Side::Sell);
-    auto [orderId4, trades4] = orderbook.addOrder(q4, price4, OrderType::GoodTillCancel, Side::Sell);
+    auto [orderId3, trades3] =
+        orderbook.addOrder(q3, price3, OrderType::GoodTillCancel, Side::Sell);
+    auto [orderId4, trades4] =
+        orderbook.addOrder(q4, price4, OrderType::GoodTillCancel, Side::Sell);
 
     // Make sure that none of these orders are filled - they stay on the book
     ASSERT_TRUE(trades1.empty());
-    ASSERT_TRUE(trades2.empty()); 
+    ASSERT_TRUE(trades2.empty());
     ASSERT_TRUE(trades3.empty());
     ASSERT_TRUE(trades4.empty());
 
-    BookState expectedBookState {
-        .ask {.orderCnt = 2, .volume = q3 + q4, .depth = 2, .bestPrice = std::min(price3, price4)},
-        .bid {.orderCnt = 2, .volume = q1 + q2, .depth = 2, .bestPrice = std::max(price1, price2)},
+    BookState expectedBookState{
+        .ask{.orderCnt = 2, .volume = q3 + q4, .depth = 2, .bestPrice = std::min(price3, price4)},
+        .bid{.orderCnt = 2, .volume = q1 + q2, .depth = 2, .bestPrice = std::max(price1, price2)},
     };
     assertBookState(expectedBookState);
-    
-    LevelState expLevel1 {.price = price1, .volume = q1, .orderCnt = 1};
-    LevelState expLevel2 {.price = price2, .volume = q2, .orderCnt = 1};
-    LevelState expLevel3 {.price = price3, .volume = q3, .orderCnt = 1};
-    LevelState expLevel4 {.price = price4, .volume = q4, .orderCnt = 1};
+
+    LevelState expLevel1{.price = price1, .volume = q1, .orderCnt = 1};
+    LevelState expLevel2{.price = price2, .volume = q2, .orderCnt = 1};
+    LevelState expLevel3{.price = price3, .volume = q3, .orderCnt = 1};
+    LevelState expLevel4{.price = price4, .volume = q4, .orderCnt = 1};
     std::vector<LevelView> bidDepth = orderbook.fullDepthBid();
     std::vector<LevelView> askDepth = orderbook.fullDepthAsk();
 
     ASSERT_EQ(bidDepth.size(), 2);
     ASSERT_EQ(askDepth.size(), 2);
-    // Bids are expected to be in descending order (largest (bestBid) price as the first level)
+    // Bids are expected to be in descending order (largest (bestBid) price as
+    // the first level)
     EXPECT_EQ(expLevel2, bidDepth[0]);
     EXPECT_EQ(expLevel1, bidDepth[1]);
     // Asks are ascending (lowest (bestAsk) price first level)
@@ -216,14 +226,14 @@ TEST_F(PassiveOrderbookTest, CancelExistentBidOrder) {
     auto [orderId, trades] = orderbook.addOrder(q, price, OrderType::GoodTillCancel, Side::Buy);
     ASSERT_TRUE(trades.empty());
 
-    BookState expectedBookState {
-        .bid {.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = price},
+    BookState expectedBookState{
+        .bid{.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = price},
     };
     assertBookState(expectedBookState);
 
-    LevelState expLevel {.price = price, .volume = q, .orderCnt = 1};
+    LevelState expLevel{.price = price, .volume = q, .orderCnt = 1};
     std::vector<LevelView> bidDepth = orderbook.fullDepthBid();
-    
+
     ASSERT_EQ(bidDepth.size(), 1);
     EXPECT_TRUE(orderbook.fullDepthAsk().empty());
     EXPECT_EQ(expLevel, bidDepth[0]);
@@ -247,14 +257,14 @@ TEST_F(PassiveOrderbookTest, CancelExistentAskOrder) {
     auto [orderId, trades] = orderbook.addOrder(q, price, OrderType::GoodTillCancel, Side::Sell);
     ASSERT_TRUE(trades.empty());
 
-    BookState expectedBookState {
-        .ask {.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = price},
+    BookState expectedBookState{
+        .ask{.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = price},
     };
     assertBookState(expectedBookState);
 
-    LevelState expLevel {.price = price, .volume = q, .orderCnt = 1};
+    LevelState expLevel{.price = price, .volume = q, .orderCnt = 1};
     std::vector<LevelView> askDepth = orderbook.fullDepthAsk();
-    
+
     ASSERT_EQ(askDepth.size(), 1);
     EXPECT_TRUE(orderbook.fullDepthBid().empty());
     EXPECT_EQ(expLevel, askDepth[0]);
@@ -288,12 +298,12 @@ TEST_F(PassiveOrderbookTest, CancelOrderWhichIsNotTheLastAtLevel) {
     ASSERT_TRUE(trades1.empty());
     ASSERT_TRUE(trades2.empty());
 
-    BookState expectedBookState {
-        .bid {.orderCnt = 2, .volume = q1 + q2, .depth = 1, .bestPrice = price},
+    BookState expectedBookState{
+        .bid{.orderCnt = 2, .volume = q1 + q2, .depth = 1, .bestPrice = price},
     };
     assertBookState(expectedBookState);
 
-    LevelState expLevel {.price = price, .volume = q1 + q2, .orderCnt = 2};
+    LevelState expLevel{.price = price, .volume = q1 + q2, .orderCnt = 2};
     std::vector<LevelView> bidDepth = orderbook.fullDepthBid();
     std::vector<LevelView> askDepth = orderbook.fullDepthAsk();
     ASSERT_EQ(bidDepth.size(), 1);
@@ -301,12 +311,12 @@ TEST_F(PassiveOrderbookTest, CancelOrderWhichIsNotTheLastAtLevel) {
     EXPECT_EQ(bidDepth[0], expLevel);
 
     orderbook.cancelOrder(orderId1);
-    expectedBookState = BookState {
-        .bid {.orderCnt = 1, .volume = q2, .depth = 1, .bestPrice = price},
+    expectedBookState = BookState{
+        .bid{.orderCnt = 1, .volume = q2, .depth = 1, .bestPrice = price},
     };
     assertBookState(expectedBookState);
 
-    expLevel = LevelState {.price = price, .volume = q2, .orderCnt = 1};
+    expLevel = LevelState{.price = price, .volume = q2, .orderCnt = 1};
     bidDepth = orderbook.fullDepthBid();
     askDepth = orderbook.fullDepthAsk();
     ASSERT_EQ(bidDepth.size(), 1);
@@ -321,12 +331,12 @@ TEST_F(PassiveOrderbookTest, ModifyQuantityUp) {
     auto [orderId, trades] = orderbook.addOrder(q, price, OrderType::GoodTillCancel, Side::Buy);
     ASSERT_TRUE(trades.empty());
 
-    BookState expectedBookState {
-        .bid {.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = price},
+    BookState expectedBookState{
+        .bid{.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = price},
     };
     assertBookState(expectedBookState);
 
-    LevelState expLevel {.price = price, .volume = q, .orderCnt = 1};
+    LevelState expLevel{.price = price, .volume = q, .orderCnt = 1};
     std::vector<LevelView> bidDepth = orderbook.fullDepthBid();
     std::vector<LevelView> askDepth = orderbook.fullDepthAsk();
     ASSERT_EQ(bidDepth.size(), 1);
@@ -335,12 +345,12 @@ TEST_F(PassiveOrderbookTest, ModifyQuantityUp) {
 
     auto [newOrderId, newTrades] = orderbook.modifyOrder(orderId, ModifyOrder{.quantity = q * 2});
     ASSERT_TRUE(newTrades.empty());
-    expectedBookState = BookState {
-        .bid {.orderCnt = 1, .volume = q * 2, .depth = 1, .bestPrice = price},
+    expectedBookState = BookState{
+        .bid{.orderCnt = 1, .volume = q * 2, .depth = 1, .bestPrice = price},
     };
     assertBookState(expectedBookState);
 
-    expLevel = LevelState {.price = price, .volume = q * 2, .orderCnt = 1};
+    expLevel = LevelState{.price = price, .volume = q * 2, .orderCnt = 1};
     bidDepth = orderbook.fullDepthBid();
     askDepth = orderbook.fullDepthAsk();
     ASSERT_EQ(bidDepth.size(), 1);
@@ -355,12 +365,12 @@ TEST_F(PassiveOrderbookTest, ModifyQuantityDown) {
     auto [orderId, trades] = orderbook.addOrder(q, price, OrderType::GoodTillCancel, Side::Buy);
     ASSERT_TRUE(trades.empty());
 
-    BookState expectedBookState {
-        .bid {.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = price},
+    BookState expectedBookState{
+        .bid{.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = price},
     };
     assertBookState(expectedBookState);
 
-    LevelState expLevel {.price = price, .volume = q, .orderCnt = 1};
+    LevelState expLevel{.price = price, .volume = q, .orderCnt = 1};
     std::vector<LevelView> bidDepth = orderbook.fullDepthBid();
     std::vector<LevelView> askDepth = orderbook.fullDepthAsk();
     ASSERT_EQ(bidDepth.size(), 1);
@@ -369,12 +379,12 @@ TEST_F(PassiveOrderbookTest, ModifyQuantityDown) {
 
     auto [newOrderId, newTrades] = orderbook.modifyOrder(orderId, ModifyOrder{.quantity = q / 2});
     ASSERT_TRUE(newTrades.empty());
-    expectedBookState = BookState {
-        .bid {.orderCnt = 1, .volume = q / 2, .depth = 1, .bestPrice = price},
+    expectedBookState = BookState{
+        .bid{.orderCnt = 1, .volume = q / 2, .depth = 1, .bestPrice = price},
     };
     assertBookState(expectedBookState);
 
-    expLevel = LevelState {.price = price, .volume = q / 2, .orderCnt = 1};
+    expLevel = LevelState{.price = price, .volume = q / 2, .orderCnt = 1};
     bidDepth = orderbook.fullDepthBid();
     askDepth = orderbook.fullDepthAsk();
     ASSERT_EQ(bidDepth.size(), 1);
@@ -387,26 +397,27 @@ TEST_F(PassiveOrderbookTest, ModifyPriceMovesToDifferentLevel) {
     price_t after = defaultPrice * 2;
     quantity_t q = defaultQuantity;
 
-    auto [oldOrderId, oldTrades] = orderbook.addOrder(q, before, OrderType::GoodTillCancel, Side::Buy);
+    auto [oldOrderId, oldTrades] =
+        orderbook.addOrder(q, before, OrderType::GoodTillCancel, Side::Buy);
     ASSERT_TRUE(oldTrades.empty());
 
-    BookState expectedBookState {.bid {.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = before}};
+    BookState expectedBookState{.bid{.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = before}};
     assertBookState(expectedBookState);
-    
-    LevelState expLevel {.price = before, .volume = q, .orderCnt = 1};
+
+    LevelState expLevel{.price = before, .volume = q, .orderCnt = 1};
     std::vector<LevelView> bidDepth = orderbook.fullDepthBid();
     std::vector<LevelView> askDepth = orderbook.fullDepthAsk();
     ASSERT_EQ(bidDepth.size(), 1);
     EXPECT_TRUE(askDepth.empty());
     EXPECT_EQ(bidDepth[0], expLevel);
 
-    auto [newOrderId, newTrades] = orderbook.modifyOrder(oldOrderId, ModifyOrder {.price = after});
+    auto [newOrderId, newTrades] = orderbook.modifyOrder(oldOrderId, ModifyOrder{.price = after});
     ASSERT_TRUE(newTrades.empty());
 
-    expectedBookState = BookState {.bid {.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = after}};
+    expectedBookState = BookState{.bid{.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = after}};
     assertBookState(expectedBookState);
-    
-    expLevel = LevelState {.price = after, .volume = q, .orderCnt = 1};
+
+    expLevel = LevelState{.price = after, .volume = q, .orderCnt = 1};
     bidDepth = orderbook.fullDepthBid();
     askDepth = orderbook.fullDepthAsk();
     ASSERT_EQ(bidDepth.size(), 1);
@@ -420,20 +431,21 @@ TEST_F(PassiveOrderbookTest, ModifyPriceStaysAtSameLevel) {
     price_t after = defaultPrice;
     quantity_t q = defaultQuantity;
 
-    auto [oldOrderId, oldTrades] = orderbook.addOrder(q, before, OrderType::GoodTillCancel, Side::Buy);
+    auto [oldOrderId, oldTrades] =
+        orderbook.addOrder(q, before, OrderType::GoodTillCancel, Side::Buy);
     ASSERT_TRUE(oldTrades.empty());
 
-    BookState expectedBookState {.bid {.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = before}};
+    BookState expectedBookState{.bid{.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = before}};
     assertBookState(expectedBookState);
-    
-    LevelState expLevel {.price = before, .volume = q, .orderCnt = 1};
+
+    LevelState expLevel{.price = before, .volume = q, .orderCnt = 1};
     std::vector<LevelView> bidDepth = orderbook.fullDepthBid();
     std::vector<LevelView> askDepth = orderbook.fullDepthAsk();
     ASSERT_EQ(bidDepth.size(), 1);
     EXPECT_TRUE(askDepth.empty());
     EXPECT_EQ(bidDepth[0], expLevel);
 
-    auto [newOrderId, newTrades] = orderbook.modifyOrder(oldOrderId, ModifyOrder {.price = after});
+    auto [newOrderId, newTrades] = orderbook.modifyOrder(oldOrderId, ModifyOrder{.price = after});
     ASSERT_TRUE(newTrades.empty());
 
     // Same state expected for BookState and LevelState
@@ -445,7 +457,9 @@ TEST_F(PassiveOrderbookTest, ModifyPriceStaysAtSameLevel) {
     EXPECT_TRUE(askDepth.empty());
     EXPECT_EQ(bidDepth[0], expLevel);
 }
+
 TEST_F(PassiveOrderbookTest, LimitOrderFullyFilledWithoutResting) {}
+
 TEST_F(PassiveOrderbookTest, LimitOrderDoesNotTradeAtWorsePriceThanLimit) {}
 TEST_F(PassiveOrderbookTest, LimitOrderRestsOnTheBookIfDoesntCrossSpread) {}
 TEST_F(PassiveOrderbookTest, LimitOrderPartialFillRestStaysOnBook) {}
@@ -461,4 +475,3 @@ TEST_F(MarketOrderbookTest, PartialFillMultipleLevels) {}
 TEST_F(MarketOrderbookTest, SweepAllBookFullFill) {}
 TEST_F(MarketOrderbookTest, SweepAllBookPartialFill) {}
 TEST_F(MarketOrderbookTest, FIFOFirstFilled) {}
-

@@ -7,6 +7,6 @@ int main() {
 
 /*
 TODO:
-    - write some cleanup functions, for example cleanup function when order is fully filled -
-        it has to be removed from orders_ etc.
+    - write some cleanup functions, for example cleanup function when order is
+fully filled - it has to be removed from orders_ etc.
 */

@@ -46,10 +46,10 @@ file(GLOB_RECURSE FORMAT_FILES CONFIGURE_DEPENDS
     "${PROJECT_SOURCE_DIR}/src/*.cpp"
     "${PROJECT_SOURCE_DIR}/src/*.h"
     "${PROJECT_SOURCE_DIR}/src/*.hpp"
-    "${PROJECT_SOURCE_DIR}/test/*.c"
-    "${PROJECT_SOURCE_DIR}/test/*.cpp"
-    "${PROJECT_SOURCE_DIR}/test/*.h"
-    "${PROJECT_SOURCE_DIR}/test/*.hpp"
+    "${PROJECT_SOURCE_DIR}/tests/*.c"
+    "${PROJECT_SOURCE_DIR}/tests/*.cpp"
+    "${PROJECT_SOURCE_DIR}/tests/*.h"
+    "${PROJECT_SOURCE_DIR}/tests/*.hpp"
 )
 
 add_custom_target(format

@@ -92,4 +92,3 @@ TEST_F(OrderTest, MultipleFillsFull) {
     EXPECT_EQ(order.getFilled(), quantity);
     EXPECT_TRUE(order.isFullyFilled());
 }
-

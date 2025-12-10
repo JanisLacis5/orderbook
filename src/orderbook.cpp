@@ -25,7 +25,8 @@ trades_t Orderbook::matchOrder(orderPtr_t order) {
 
         while (!orders.empty() && !order->isFullyFilled()) {
             orderPtr_t opposite = orders.front();
-            quantity_t toFill = std::min(order->getRemainingQuantity(), opposite->getRemainingQuantity());
+            quantity_t toFill =
+                std::min(order->getRemainingQuantity(), opposite->getRemainingQuantity());
 
             Trade trade = (side == Side::Buy ? newTrade(orderId, opposite->getOrderId(), toFill)
                                              : newTrade(opposite->getOrderId(), orderId, toFill));
@@ -49,9 +50,10 @@ trades_t Orderbook::matchOrder(orderPtr_t order) {
             it = side == Side::Buy ? ask_.erase(it) : bid_.erase(it);
     }
 
-    // For orders that are fine to rest on the book, fill orders that have a valid price and leave the rest on the book
-    if (!order->isFullyFilled() &&
-        (order->getType() == OrderType::GoodTillCancel || order->getType() == OrderType::GoodTillEOD)) {
+    // For orders that are fine to rest on the book, fill orders that have a
+    // valid price and leave the rest on the book
+    if (!order->isFullyFilled() && (order->getType() == OrderType::GoodTillCancel ||
+                                    order->getType() == OrderType::GoodTillEOD)) {
         addAtOrderPrice(order);
         processAddedOrder(order);
     }
@@ -86,7 +88,8 @@ bool Orderbook::canBeFullyFilled(price_t price, quantity_t quantity, Side side) 
         return false;
 
     price_t treshold;
-    // respectively ask_ or bid_ are not empty - checked in doesCrossSpread function
+    // respectively ask_ or bid_ are not empty - checked in doesCrossSpread
+    // function
     if (side == Side::Sell) {
         const auto& [bidPrice, _] = *bid_.begin();
         treshold = bidPrice;
@@ -97,7 +100,8 @@ bool Orderbook::canBeFullyFilled(price_t price, quantity_t quantity, Side side) 
     }
 
     for (const auto& [levelPrice, levelData] : levelData_) {
-        if ((side == Side::Buy && levelPrice < treshold) || (side == Side::Sell && levelPrice > treshold))
+        if ((side == Side::Buy && levelPrice < treshold) ||
+            (side == Side::Sell && levelPrice > treshold))
             continue;
         if ((side == Side::Sell && levelPrice < price) || (side == Side::Buy && levelPrice > price))
             continue;
@@ -166,7 +170,8 @@ orderPtr_t Orderbook::newOrder(quantity_t quantity, price_t price, OrderType typ
 }
 
 // PUBLIC FUNCTION IMPLEMENTATIONS
-std::pair<orderId_t, trades_t> Orderbook::addOrder(quantity_t quantity, price_t price, OrderType type, Side side) {
+std::pair<orderId_t, trades_t> Orderbook::addOrder(quantity_t quantity, price_t price,
+                                                   OrderType type, Side side) {
     orderPtr_t order = newOrder(quantity, price, type, side);
 
     if (type == OrderType::FillAndKill) {
@@ -208,13 +213,16 @@ void Orderbook::cancelOrder(orderId_t orderId) {
         levelData_.erase(price);
 }
 
-std::pair<orderId_t, trades_t> Orderbook::modifyOrder(orderId_t orderId, ModifyOrder modifications) {
+std::pair<orderId_t, trades_t> Orderbook::modifyOrder(orderId_t orderId,
+                                                      ModifyOrder modifications) {
     orderPtr_t oldOrder = orders_.at(orderId).order_;
 
-    quantity_t quantity =
-        modifications.quantity.has_value() ? modifications.quantity.value() : oldOrder->getRemainingQuantity();
-    price_t price = modifications.price.has_value() ? modifications.price.value() : oldOrder->getPrice();
-    OrderType type = modifications.type.has_value() ? modifications.type.value() : oldOrder->getType();
+    quantity_t quantity = modifications.quantity.has_value() ? modifications.quantity.value()
+                                                             : oldOrder->getRemainingQuantity();
+    price_t price =
+        modifications.price.has_value() ? modifications.price.value() : oldOrder->getPrice();
+    OrderType type =
+        modifications.type.has_value() ? modifications.type.value() : oldOrder->getType();
     Side side = modifications.side.has_value() ? modifications.side.value() : oldOrder->getSide();
 
     cancelOrder(orderId);
