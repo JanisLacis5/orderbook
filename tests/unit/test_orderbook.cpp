@@ -65,25 +65,26 @@ protected:
 
         BookState actualState{
             .ask =
-                {
-                    .orderCnt = std::accumulate(askDepth.begin(), askDepth.end(), 0u, cntOrders),
-                    .volume = std::accumulate(askDepth.begin(), askDepth.end(), 0u, cntVolume),
-                    .depth = static_cast<uint32_t>(askDepth.size()),
-                    .bestPrice = orderbook.bestAsk(),
-                },
+            {
+                .orderCnt = std::accumulate(askDepth.begin(), askDepth.end(), 0u, cntOrders),
+                .volume = std::accumulate(askDepth.begin(), askDepth.end(), 0u, cntVolume),
+                .depth = static_cast<uint32_t>(askDepth.size()),
+                .bestPrice = orderbook.bestAsk(),
+            },
             .bid =
-                {
-                    .orderCnt = std::accumulate(bidDepth.begin(), bidDepth.end(), 0u, cntOrders),
-                    .volume = std::accumulate(bidDepth.begin(), bidDepth.end(), 0u, cntVolume),
-                    .depth = static_cast<uint32_t>(bidDepth.size()),
-                    .bestPrice = orderbook.bestBid(),
-                },
+            {
+                .orderCnt = std::accumulate(bidDepth.begin(), bidDepth.end(), 0u, cntOrders),
+                .volume = std::accumulate(bidDepth.begin(), bidDepth.end(), 0u, cntVolume),
+                .depth = static_cast<uint32_t>(bidDepth.size()),
+                .bestPrice = orderbook.bestBid(),
+            },
         };
 
         EXPECT_EQ(expecetedState, actualState);
     }
 
-    orderId_t addRestingOrder(quantity_t quantity, price_t price, OrderType type, Side side) {
+    orderId_t addRestingOrder(quantity_t quantity, price_t price,
+                              OrderType type, Side side) {
         auto [orderId, trades] = orderbook.addOrder(quantity, price, type, side);
         EXPECT_TRUE(trades.empty());
         return orderId;
@@ -451,13 +452,21 @@ TEST_F(PassiveOrderbookTest, LimitOrderFullyFilledWithoutResting) {
 
     // Add some orders near the default price (TODO: move to populateBook())
     // These orders will be filled by the limit order where buy_price > sell_price
-    auto orderId1 = addRestingOrder(q / 2, price - 1, OrderType::GoodTillCancel, Side::Sell);
-    auto orderId2 = addRestingOrder(q - q / 2, price - 2, OrderType::GoodTillCancel, Side::Sell);
+    // order with orderId1 will be filled first because it is at better price
+    auto orderId1 = addRestingOrder(q / 2, price - 2, OrderType::GoodTillCancel, Side::Sell);
+    auto orderId2 = addRestingOrder(q - q / 2, price - 1, OrderType::GoodTillCancel, Side::Sell);
 
     auto [orderId, trades] = orderbook.addOrder(q, price, OrderType::GoodTillCancel, Side::Buy);
-    ASSERT_FALSE(trades.empty());
+    ASSERT_EQ(trades.size(), 2);
 
-    TradeState trade1 =
+    TradeState trade1{.seller = orderId1, .buyer = orderId, .quantity = q / 2};
+    TradeState trade2{.seller = orderId2, .buyer = orderId, .quantity = q - q / 2};
+    EXPECT_EQ(trade1, trades[0]);
+    EXPECT_EQ(trade2, trades[1]);
+    EXPECT_TRUE(orderbook.fullDepthAsk().empty());
+    EXPECT_TRUE(orderbook.fullDepthBid().empty());
+    EXPECT_FALSE(orderbook.bestAsk().has_value());
+    EXPECT_FALSE(orderbook.bestAsk().has_value());
 }
 
 TEST_F(PassiveOrderbookTest, LimitOrderDoesNotTradeAtWorsePriceThanLimit) {}
