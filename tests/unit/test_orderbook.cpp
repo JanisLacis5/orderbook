@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <numeric>
+#include <random>
 #include <stdexcept>
 #include "orderbook.h"
 #include "types.h"
@@ -50,6 +51,13 @@ protected:
     price_t defaultPrice{100};
     quantity_t defaultQuantity{10};
 
+    int randomInt(int l, int r) {
+        std::random_device rr;
+        std::default_random_engine e1(rr());
+        std::uniform_int_distribution<int> uniform_dist(l, r);
+        return uniform_dist(e1);
+    }
+
     void assertBookHealthy() const {
         std::optional<price_t> bestBid = orderbook.bestBid();
         std::optional<price_t> bestAsk = orderbook.bestAsk();
@@ -83,8 +91,7 @@ protected:
         EXPECT_EQ(expecetedState, actualState);
     }
 
-    orderId_t addRestingOrder(quantity_t quantity, price_t price,
-                              OrderType type, Side side) {
+    orderId_t addRestingOrder(quantity_t quantity, price_t price, OrderType type, Side side) {
         auto [orderId, trades] = orderbook.addOrder(quantity, price, type, side);
         EXPECT_TRUE(trades.empty());
         return orderId;
@@ -469,7 +476,30 @@ TEST_F(PassiveOrderbookTest, LimitOrderFullyFilledWithoutResting) {
     EXPECT_FALSE(orderbook.bestAsk().has_value());
 }
 
-TEST_F(PassiveOrderbookTest, LimitOrderDoesNotTradeAtWorsePriceThanLimit) {}
+TEST_F(PassiveOrderbookTest, LimitOrderDoesNotTradeAtWorsePriceThanLimit) {
+    quantity_t q = defaultQuantity;
+
+    // Price is in interval [1, 2defaultPrice]
+    auto price = [this]() { return defaultPrice + randomInt(-defaultPrice + 1, defaultPrice); };
+    // Test this function for 100 times
+    for (auto i{0}; i < 100; i++) {
+        int generatedPrice = price();
+        ASSERT_TRUE(generatedPrice <= 2 * defaultPrice);
+        ASSERT_TRUE(generatedPrice > 0);
+    }
+
+    auto orderId1 = addRestingOrder(q, price(), OrderType::GoodTillCancel, Side::Sell);
+    auto orderId2 = addRestingOrder(q, price(), OrderType::GoodTillCancel, Side::Sell);
+    auto orderId3 = addRestingOrder(q, price(), OrderType::GoodTillCancel, Side::Sell);
+    auto orderId4 = addRestingOrder(q, price(), OrderType::GoodTillCancel, Side::Sell);
+    auto orderId5 = addRestingOrder(q, price(), OrderType::GoodTillCancel, Side::Sell);
+
+    auto [orderId, trades] =
+        orderbook.addOrder(q, defaultPrice, OrderType::GoodTillCancel, Side::Buy);
+    for (const auto& trade : trades)
+        EXPECT_TRUE(1 <= trade.price <= 2 * defaultPrice);
+}
+
 TEST_F(PassiveOrderbookTest, LimitOrderRestsOnTheBookIfDoesntCrossSpread) {}
 TEST_F(PassiveOrderbookTest, LimitOrderPartialFillRestStaysOnBook) {}
 TEST_F(PassiveOrderbookTest, LimitOrderSweepsAllLiquidityFullFill) {}

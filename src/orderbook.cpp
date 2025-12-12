@@ -28,8 +28,9 @@ trades_t Orderbook::matchOrder(orderPtr_t order) {
             quantity_t toFill =
                 std::min(order->getRemainingQuantity(), opposite->getRemainingQuantity());
 
-            Trade trade = (side == Side::Buy ? newTrade(orderId, opposite->getOrderId(), toFill)
-                                             : newTrade(opposite->getOrderId(), orderId, toFill));
+            Trade trade =
+                (side == Side::Buy ? newTrade(orderId, opposite->getOrderId(), toFill, currPrice)
+                                   : newTrade(opposite->getOrderId(), orderId, toFill, currPrice));
 
             trades.push_back(trade);
             opposite->fill(toFill);
@@ -186,6 +187,7 @@ std::pair<orderId_t, trades_t> Orderbook::addOrder(quantity_t quantity, price_t 
 }
 
 #include <iostream>
+
 void Orderbook::cancelOrder(orderId_t orderId) {
     for (auto& orderInfo : orders_) {
         std::cout << orderInfo.second.order_->getOrderId() << std::endl;
