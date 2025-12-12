@@ -497,7 +497,7 @@ TEST_F(PassiveOrderbookTest, LimitOrderDoesNotTradeAtWorsePriceThanLimit) {
     auto [orderId, trades] =
         orderbook.addOrder(q, defaultPrice, OrderType::GoodTillCancel, Side::Buy);
     for (const auto& trade : trades)
-        EXPECT_TRUE(1 <= trade.price <= 2 * defaultPrice);
+        EXPECT_TRUE(trade.price >= 1 && trade.price <= defaultPrice);
 }
 
 TEST_F(PassiveOrderbookTest, LimitOrderRestsOnTheBookIfDoesntCrossSpread) {}
