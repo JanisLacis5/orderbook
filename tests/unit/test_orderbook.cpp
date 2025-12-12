@@ -56,6 +56,7 @@ protected:
         if (bestBid.has_value() && bestAsk.has_value())
             EXPECT_TRUE(bestBid.value() < bestAsk.value());
     }
+
     void assertBookState(BookState& expecetedState) const {
         std::vector<LevelView> bidDepth = orderbook.fullDepthBid();
         std::vector<LevelView> askDepth = orderbook.fullDepthAsk();
@@ -81,17 +82,19 @@ protected:
 
         EXPECT_EQ(expecetedState, actualState);
     }
-    std::pair<orderId_t, trades_t> addRestingOrder(quantity_t quantity, price_t price,
-                                                   OrderType type, Side side) {
+
+    orderId_t addRestingOrder(quantity_t quantity, price_t price, OrderType type, Side side) {
         auto [orderId, trades] = orderbook.addOrder(quantity, price, type, side);
         EXPECT_TRUE(trades.empty());
-        return {orderId, trades};
+        return orderId;
     }
+
     void populateBook(size_t bids, size_t asks, price_t centerPrice) {}
     void TearDown() override { assertBookHealthy(); }
 };
 
 class PassiveOrderbookTest : public OrderbookTest {};
+
 class MarketOrderbookTest : public OrderbookTest {};
 
 // PASSIVE ORDERS
@@ -105,7 +108,7 @@ TEST_F(PassiveOrderbookTest, InitialState) {
 TEST_F(PassiveOrderbookTest, OneBidOnEmptyBook) {
     price_t price = defaultPrice;
     quantity_t quantity = defaultQuantity;
-    auto [orderId, trades] = addRestingOrder(quantity, price, OrderType::GoodTillCancel, Side::Buy);
+    auto orderId = addRestingOrder(quantity, price, OrderType::GoodTillCancel, Side::Buy);
 
     BookState expectedState{
         .bid{
@@ -125,8 +128,7 @@ TEST_F(PassiveOrderbookTest, OneBidOnEmptyBook) {
 TEST_F(PassiveOrderbookTest, OneAskOnEmptyBook) {
     price_t price = defaultPrice;
     quantity_t quantity = defaultQuantity;
-    auto [orderId, trades] =
-        addRestingOrder(quantity, price, OrderType::GoodTillCancel, Side::Sell);
+    auto orderId = addRestingOrder(quantity, price, OrderType::GoodTillCancel, Side::Sell);
 
     BookState expectedState{
         .ask{
@@ -146,10 +148,8 @@ TEST_F(PassiveOrderbookTest, FIFOOnTheSameLevel) {
     price_t price = defaultPrice;
     quantity_t quantity = defaultQuantity;
 
-    auto [orderId1, trades1] =
-        addRestingOrder(quantity, price, OrderType::GoodTillCancel, Side::Buy);
-    auto [orderId2, trades2] =
-        addRestingOrder(quantity, price, OrderType::GoodTillCancel, Side::Buy);
+    auto orderId1 = addRestingOrder(quantity, price, OrderType::GoodTillCancel, Side::Buy);
+    auto orderId2 = addRestingOrder(quantity, price, OrderType::GoodTillCancel, Side::Buy);
     auto [oppositeOrderId, oppositeOrderTrades] =
         orderbook.addOrder(quantity, price, OrderType::Market, Side::Sell);
 
@@ -188,10 +188,10 @@ TEST_F(PassiveOrderbookTest, BookStateWithMultipleOrders) {
     quantity_t q2 = defaultQuantity + 1;
     quantity_t q3 = defaultQuantity + 2;
     quantity_t q4 = defaultQuantity + 3;
-    auto [orderId1, trades1] = addRestingOrder(q1, price1, OrderType::GoodTillCancel, Side::Buy);
-    auto [orderId2, trades2] = addRestingOrder(q2, price2, OrderType::GoodTillCancel, Side::Buy);
-    auto [orderId3, trades3] = addRestingOrder(q3, price3, OrderType::GoodTillCancel, Side::Sell);
-    auto [orderId4, trades4] = addRestingOrder(q4, price4, OrderType::GoodTillCancel, Side::Sell);
+    auto orderId1 = addRestingOrder(q1, price1, OrderType::GoodTillCancel, Side::Buy);
+    auto orderId2 = addRestingOrder(q2, price2, OrderType::GoodTillCancel, Side::Buy);
+    auto orderId3 = addRestingOrder(q3, price3, OrderType::GoodTillCancel, Side::Sell);
+    auto orderId4 = addRestingOrder(q4, price4, OrderType::GoodTillCancel, Side::Sell);
 
     BookState expectedBookState{
         .ask{.orderCnt = 2, .volume = q3 + q4, .depth = 2, .bestPrice = std::min(price3, price4)},
@@ -220,7 +220,7 @@ TEST_F(PassiveOrderbookTest, BookStateWithMultipleOrders) {
 TEST_F(PassiveOrderbookTest, CancelExistentBidOrder) {
     price_t price = defaultPrice;
     quantity_t q = defaultQuantity;
-    auto [orderId, trades] = addRestingOrder(q, price, OrderType::GoodTillCancel, Side::Buy);
+    auto orderId = addRestingOrder(q, price, OrderType::GoodTillCancel, Side::Buy);
 
     BookState expectedBookState{
         .bid{.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = price},
@@ -250,7 +250,7 @@ TEST_F(PassiveOrderbookTest, CancelExistentBidOrder) {
 TEST_F(PassiveOrderbookTest, CancelExistentAskOrder) {
     price_t price = defaultPrice;
     quantity_t q = defaultQuantity;
-    auto [orderId, trades] = addRestingOrder(q, price, OrderType::GoodTillCancel, Side::Sell);
+    auto orderId = addRestingOrder(q, price, OrderType::GoodTillCancel, Side::Sell);
 
     BookState expectedBookState{
         .ask{.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = price},
@@ -288,8 +288,8 @@ TEST_F(PassiveOrderbookTest, CancelOrderWhichIsNotTheLastAtLevel) {
     quantity_t q1 = defaultQuantity;
     quantity_t q2 = defaultQuantity + 8;
 
-    auto [orderId1, trades1] = addRestingOrder(q1, price, OrderType::GoodTillCancel, Side::Buy);
-    auto [orderId2, trades2] = addRestingOrder(q2, price, OrderType::GoodTillCancel, Side::Buy);
+    auto orderId1 = addRestingOrder(q1, price, OrderType::GoodTillCancel, Side::Buy);
+    auto orderId2 = addRestingOrder(q2, price, OrderType::GoodTillCancel, Side::Buy);
 
     BookState expectedBookState{
         .bid{.orderCnt = 2, .volume = q1 + q2, .depth = 1, .bestPrice = price},
@@ -321,7 +321,7 @@ TEST_F(PassiveOrderbookTest, ModifyQuantityUp) {
     price_t price = defaultPrice;
     quantity_t q = defaultQuantity + 10;
 
-    auto [orderId, trades] = addRestingOrder(q, price, OrderType::GoodTillCancel, Side::Buy);
+    auto orderId = addRestingOrder(q, price, OrderType::GoodTillCancel, Side::Buy);
 
     BookState expectedBookState{
         .bid{.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = price},
@@ -354,7 +354,7 @@ TEST_F(PassiveOrderbookTest, ModifyQuantityDown) {
     price_t price = defaultPrice;
     quantity_t q = defaultQuantity + 10;
 
-    auto [orderId, trades] = addRestingOrder(q, price, OrderType::GoodTillCancel, Side::Buy);
+    auto orderId = addRestingOrder(q, price, OrderType::GoodTillCancel, Side::Buy);
 
     BookState expectedBookState{
         .bid{.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = price},
@@ -388,7 +388,7 @@ TEST_F(PassiveOrderbookTest, ModifyPriceMovesToDifferentLevel) {
     price_t after = defaultPrice * 2;
     quantity_t q = defaultQuantity;
 
-    auto [oldOrderId, oldTrades] = addRestingOrder(q, before, OrderType::GoodTillCancel, Side::Buy);
+    auto oldOrderId = addRestingOrder(q, before, OrderType::GoodTillCancel, Side::Buy);
 
     BookState expectedBookState{.bid{.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = before}};
     assertBookState(expectedBookState);
@@ -420,7 +420,7 @@ TEST_F(PassiveOrderbookTest, ModifyPriceStaysAtSameLevel) {
     price_t after = defaultPrice;
     quantity_t q = defaultQuantity;
 
-    auto [oldOrderId, oldTrades] = addRestingOrder(q, before, OrderType::GoodTillCancel, Side::Buy);
+    auto oldOrderId = addRestingOrder(q, before, OrderType::GoodTillCancel, Side::Buy);
 
     BookState expectedBookState{.bid{.orderCnt = 1, .volume = q, .depth = 1, .bestPrice = before}};
     assertBookState(expectedBookState);
@@ -446,13 +446,18 @@ TEST_F(PassiveOrderbookTest, ModifyPriceStaysAtSameLevel) {
 }
 
 TEST_F(PassiveOrderbookTest, LimitOrderFullyFilledWithoutResting) {
-    // price_t price = defaultPrice;
-    // quantity_t q = defaultQuantity;
-    //
-    // // Add some orders near the default price (TODO: move to populateBook())
-    // addOrder(q/2, price, OrderType::GoodTillCancel, Side::Sell);
-    //
-    // auto [orderId, trades] = addOrder(q, price, OrderType::GoodTillCancel, Side::Buy);
+    price_t price = defaultPrice;
+    quantity_t q = defaultQuantity;
+
+    // Add some orders near the default price (TODO: move to populateBook())
+    // These orders will be filled by the limit order where buy_price > sell_price
+    auto orderId1 = addRestingOrder(q / 2, price - 1, OrderType::GoodTillCancel, Side::Sell);
+    auto orderId2 = addRestingOrder(q - q / 2, price - 2, OrderType::GoodTillCancel, Side::Sell);
+
+    auto [orderId, trades] = orderbook.addOrder(q, price, OrderType::GoodTillCancel, Side::Buy);
+    ASSERT_FALSE(trades.empty());
+
+    TradeState trade1 =
 }
 
 TEST_F(PassiveOrderbookTest, LimitOrderDoesNotTradeAtWorsePriceThanLimit) {}
