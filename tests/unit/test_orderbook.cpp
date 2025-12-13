@@ -50,9 +50,9 @@ protected:
     Orderbook orderbook;
     price_t defaultPrice{100};
     quantity_t defaultQuantity{10};
+    std::random_device rr;
 
     int randomInt(int l, int r) {
-        std::random_device rr;
         std::default_random_engine e1(rr());
         std::uniform_int_distribution<int> uniform_dist(l, r);
         return uniform_dist(e1);
@@ -496,8 +496,13 @@ TEST_F(PassiveOrderbookTest, LimitOrderDoesNotTradeAtWorsePriceThanLimit) {
 
     auto [orderId, trades] =
         orderbook.addOrder(q, defaultPrice, OrderType::GoodTillCancel, Side::Buy);
-    for (const auto& trade : trades)
+
+    price_t prevPrice = 0;
+    for (const auto& trade : trades) {
         EXPECT_TRUE(trade.price >= 1 && trade.price <= defaultPrice);
+        EXPECT_TRUE(prevPrice < trade.price); // Best prices trade first
+        prevPrice = trade.price;
+    }
 }
 
 TEST_F(PassiveOrderbookTest, LimitOrderRestsOnTheBookIfDoesntCrossSpread) {}
