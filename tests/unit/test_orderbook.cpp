@@ -73,19 +73,19 @@ protected:
 
         BookState actualState{
             .ask =
-            {
-                .orderCnt = std::accumulate(askDepth.begin(), askDepth.end(), 0u, cntOrders),
-                .volume = std::accumulate(askDepth.begin(), askDepth.end(), 0u, cntVolume),
-                .depth = static_cast<uint32_t>(askDepth.size()),
-                .bestPrice = orderbook.bestAsk(),
-            },
+                {
+                    .orderCnt = std::accumulate(askDepth.begin(), askDepth.end(), 0u, cntOrders),
+                    .volume = std::accumulate(askDepth.begin(), askDepth.end(), 0u, cntVolume),
+                    .depth = static_cast<uint32_t>(askDepth.size()),
+                    .bestPrice = orderbook.bestAsk(),
+                },
             .bid =
-            {
-                .orderCnt = std::accumulate(bidDepth.begin(), bidDepth.end(), 0u, cntOrders),
-                .volume = std::accumulate(bidDepth.begin(), bidDepth.end(), 0u, cntVolume),
-                .depth = static_cast<uint32_t>(bidDepth.size()),
-                .bestPrice = orderbook.bestBid(),
-            },
+                {
+                    .orderCnt = std::accumulate(bidDepth.begin(), bidDepth.end(), 0u, cntOrders),
+                    .volume = std::accumulate(bidDepth.begin(), bidDepth.end(), 0u, cntVolume),
+                    .depth = static_cast<uint32_t>(bidDepth.size()),
+                    .bestPrice = orderbook.bestBid(),
+                },
         };
 
         EXPECT_EQ(expecetedState, actualState);
@@ -500,7 +500,7 @@ TEST_F(PassiveOrderbookTest, LimitOrderDoesNotTradeAtWorsePriceThanLimit) {
     price_t prevPrice = 0;
     for (const auto& trade : trades) {
         EXPECT_TRUE(trade.price >= 1 && trade.price <= defaultPrice);
-        EXPECT_TRUE(prevPrice < trade.price); // Best prices trade first
+        EXPECT_TRUE(prevPrice < trade.price);  // Best prices trade first
         prevPrice = trade.price;
     }
 }
