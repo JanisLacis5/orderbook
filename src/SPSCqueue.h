@@ -7,10 +7,11 @@
 template <typename T, typename Alloc = std::allocator<T>>
 class SPSCqueue : private Alloc {
 public:
-    explicit SPSCqueue(size_t capacity, const Alloc& allocator = Alloc{})
-        : Alloc(allocator),
+    using traits = std::allocator_traits<Alloc>;
+    explicit SPSCqueue(size_t capacity, Alloc allocator = Alloc{})
+        : allocator_{allocator},
           capacity_{capacity},
-          buffer_{std::allocator_traits<Alloc>::allocate(allocator, capacity)} {
+          buffer_{traits::allocate(allocator_, capacity)} {
         if (capacity == 0)
             throw std::logic_error("Capacity of the queue has to be non-zero");
     };
@@ -20,23 +21,38 @@ public:
             buffer_[popPtr_ % capacity_].~T();
             ++popPtr_;
         }
-        std::allocator_traits<Alloc>::deallocate(buffer_);
+        traits::deallocate(allocator_, buffer_, capacity_);
     };
 
     // static_assert();  assert that this is lock free
 
-    size_t size() {
+    size_t size() const {
         assert(popPtr_ <= pushPtr_);
         return pushPtr_ - popPtr_;
     }
-    bool empty() { return size() == 0; };
-    bool full() { return size() == capacity_; };
-    T* front() { return buffer_[popPtr_]; }
-    bool push(const T& value);
-    bool pop();
-    size_t capacity() { return capacity_; };
+    bool empty() const { return size() == 0; };
+    bool full() const { return size() == capacity_; };
+    T& front() { return buffer_[popPtr_ % capacity_ ]; }
+    size_t capacity() const { return capacity_; };
+    bool push(const T& value) {
+        if (full())
+            return false;
+
+        new (&buffer_[pushPtr_ % capacity_]) T(value);
+        ++pushPtr_;
+        return true;
+    };
+    bool pop() {
+        if (empty())
+            return false;
+
+        buffer_[popPtr_ % capacity_].~T();
+        ++popPtr_;
+        return true;
+    };
 
 private:
+    Alloc allocator_;
     size_t pushPtr_{0};
     size_t popPtr_{0};
     size_t capacity_;

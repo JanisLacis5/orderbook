@@ -17,20 +17,19 @@ void __tsan_on_report() {
 using testType = unsigned int;
 class FifoTest : public testing::Test {
 public:
-    using value_type = typename SPSCqueue<testType>::value_type;
-    SPSCqueue<testType> fifo{4};
+    SPSCqueue<testType> fifo{10};
 };
 
 TEST_F(FifoTest, properties) {
-    EXPECT_FALSE(std::is_default_constructible_v<typename SPSCqueue>);
-    EXPECT_TRUE((std::is_constructible_v<typename SPSCqueue<testType>, unsigned long>));
-    EXPECT_TRUE((std::is_constructible_v<typename SPSCqueue<testType>, unsigned long,
-                                         std::allocator<typename value_type>>));
-    EXPECT_FALSE(std::is_copy_constructible_v<typename SPSCqueue<testType>>);
-    EXPECT_FALSE(std::is_move_constructible_v<typename SPSCqueue<testType>>);
-    EXPECT_FALSE(std::is_copy_assignable_v<typename SPSCqueue<testType>>);
-    EXPECT_FALSE(std::is_move_assignable_v<typename SPSCqueue<testType>>);
-    EXPECT_TRUE(std::is_destructible_v<typename SPSCqueue<testType>>);
+    EXPECT_FALSE(std::is_default_constructible_v<SPSCqueue<testType>>);
+    EXPECT_TRUE((std::is_constructible_v<SPSCqueue<testType>, unsigned long>));
+    EXPECT_TRUE(
+        (std::is_constructible_v<SPSCqueue<testType>, unsigned long, std::allocator<testType>>));
+    EXPECT_FALSE(std::is_copy_constructible_v<SPSCqueue<testType>>);
+    EXPECT_FALSE(std::is_move_constructible_v<SPSCqueue<testType>>);
+    EXPECT_FALSE(std::is_copy_assignable_v<SPSCqueue<testType>>);
+    EXPECT_FALSE(std::is_move_assignable_v<SPSCqueue<testType>>);
+    EXPECT_TRUE(std::is_destructible_v<SPSCqueue<testType>>);
 }
 
 TEST_F(FifoTest, initialState) {
@@ -70,8 +69,8 @@ TEST_F(FifoTest, push) {
 }
 
 TEST_F(FifoTest, pop) {
-    auto value = typename value_type{};
-    EXPECT_FALSE(fifo.pop(value));
+    auto value = testType{};
+    EXPECT_FALSE(fifo.pop());
 
     for (auto i = 0u; i < fifo.capacity(); ++i) {
         fifo.push(42 + i);
@@ -79,17 +78,16 @@ TEST_F(FifoTest, pop) {
 
     for (auto i = 0u; i < fifo.capacity(); ++i) {
         EXPECT_EQ(fifo.capacity() - i, fifo.size());
-        auto value = typename value_type{};
-        EXPECT_TRUE(fifo.pop(value));
+        EXPECT_TRUE(fifo.pop());
         EXPECT_EQ(42 + i, value);
     }
     EXPECT_EQ(0, fifo.size());
     EXPECT_TRUE(fifo.empty());
-    EXPECT_FALSE(fifo.pop(value));
+    EXPECT_FALSE(fifo.pop());
 }
 
 TEST_F(FifoTest, popFullFifo) {
-    auto value = typename value_type{};
+    auto value = testType{};
     EXPECT_FALSE(fifo.pop());
 
     for (auto i = 0u; i < fifo.capacity(); ++i) {
@@ -111,31 +109,31 @@ TEST_F(FifoTest, popFullFifo) {
 }
 
 TEST_F(FifoTest, popEmpty) {
-    auto value = typename value_type{};
-    EXPECT_FALSE(fifo.pop(value));
+    auto value = testType{};
+    EXPECT_FALSE(fifo.pop());
 
     for (auto i = 0u; i < fifo.capacity() * 4; ++i) {
         EXPECT_TRUE(fifo.empty());
         EXPECT_TRUE(fifo.push(42 + i));
-        EXPECT_TRUE(fifo.pop(value));
+        EXPECT_TRUE(fifo.pop());
         EXPECT_EQ(42 + i, value);
     }
 
     EXPECT_TRUE(fifo.empty());
-    EXPECT_FALSE(fifo.pop(value));
+    EXPECT_FALSE(fifo.pop());
 }
 
 TEST_F(FifoTest, wrap) {
-    auto value = typename value_type{};
+    auto value = testType{};
     for (auto i = 0u; i < fifo.capacity() * 2 + 1; ++i) {
         fifo.push(42 + i);
-        EXPECT_TRUE(fifo.pop(value));
+        EXPECT_TRUE(fifo.pop());
         EXPECT_EQ(42 + i, value);
     }
 
     for (auto i = 0u; i < 8u; ++i) {
         fifo.push(42 + i);
-        EXPECT_TRUE(fifo.pop(value));
+        EXPECT_TRUE(fifo.pop());
         EXPECT_EQ(42 + i, value);
     }
 }
