@@ -24,6 +24,9 @@ public:
         traits::deallocate(allocator_, buffer_, capacity_);
     };
 
+    SPSCqueue& operator=(const SPSCqueue&) = delete;
+    SPSCqueue(const SPSCqueue&) = delete;
+
     // static_assert();  assert that this is lock free
 
     size_t size() const {

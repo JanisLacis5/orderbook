@@ -17,7 +17,7 @@ void __tsan_on_report() {
 using testType = unsigned int;
 class FifoTest : public testing::Test {
 public:
-    SPSCqueue<testType> fifo{10};
+    SPSCqueue<testType> fifo{4};
 };
 
 TEST_F(FifoTest, properties) {
