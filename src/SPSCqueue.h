@@ -42,12 +42,14 @@ public:
         ++pushPtr_;
         return true;
     };
-    bool pop() {
+    bool pop(T& out) {
         if (empty())
             return false;
 
+        out = buffer_[popPtr_ % capacity_];
         buffer_[popPtr_ % capacity_].~T();
         ++popPtr_;
+
         return true;
     };
 

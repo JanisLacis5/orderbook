@@ -70,7 +70,7 @@ TEST_F(FifoTest, push) {
 
 TEST_F(FifoTest, pop) {
     auto value = testType{};
-    EXPECT_FALSE(fifo.pop());
+    EXPECT_FALSE(fifo.pop(value));
 
     for (auto i = 0u; i < fifo.capacity(); ++i) {
         fifo.push(42 + i);
@@ -78,17 +78,17 @@ TEST_F(FifoTest, pop) {
 
     for (auto i = 0u; i < fifo.capacity(); ++i) {
         EXPECT_EQ(fifo.capacity() - i, fifo.size());
-        EXPECT_TRUE(fifo.pop());
+        EXPECT_TRUE(fifo.pop(value));
         EXPECT_EQ(42 + i, value);
     }
     EXPECT_EQ(0, fifo.size());
     EXPECT_TRUE(fifo.empty());
-    EXPECT_FALSE(fifo.pop());
+    EXPECT_FALSE(fifo.pop(value));
 }
 
 TEST_F(FifoTest, popFullFifo) {
     auto value = testType{};
-    EXPECT_FALSE(fifo.pop());
+    EXPECT_FALSE(fifo.pop(value));
 
     for (auto i = 0u; i < fifo.capacity(); ++i) {
         ASSERT_EQ(i, fifo.size());
@@ -99,7 +99,7 @@ TEST_F(FifoTest, popFullFifo) {
 
     for (auto i = 0u; i < fifo.capacity() * 4; ++i) {
         EXPECT_EQ(42 + i, fifo.front());
-        EXPECT_TRUE(fifo.pop());
+        EXPECT_TRUE(fifo.pop(value));
         EXPECT_FALSE(fifo.full());
 
         EXPECT_TRUE(fifo.push(42 + 4 + i));
@@ -110,30 +110,30 @@ TEST_F(FifoTest, popFullFifo) {
 
 TEST_F(FifoTest, popEmpty) {
     auto value = testType{};
-    EXPECT_FALSE(fifo.pop());
+    EXPECT_FALSE(fifo.pop(value));
 
     for (auto i = 0u; i < fifo.capacity() * 4; ++i) {
         EXPECT_TRUE(fifo.empty());
         EXPECT_TRUE(fifo.push(42 + i));
-        EXPECT_TRUE(fifo.pop());
+        EXPECT_TRUE(fifo.pop(value));
         EXPECT_EQ(42 + i, value);
     }
 
     EXPECT_TRUE(fifo.empty());
-    EXPECT_FALSE(fifo.pop());
+    EXPECT_FALSE(fifo.pop(value));
 }
 
 TEST_F(FifoTest, wrap) {
     auto value = testType{};
     for (auto i = 0u; i < fifo.capacity() * 2 + 1; ++i) {
         fifo.push(42 + i);
-        EXPECT_TRUE(fifo.pop());
+        EXPECT_TRUE(fifo.pop(value));
         EXPECT_EQ(42 + i, value);
     }
 
     for (auto i = 0u; i < 8u; ++i) {
         fifo.push(42 + i);
-        EXPECT_TRUE(fifo.pop());
+        EXPECT_TRUE(fifo.pop(value));
         EXPECT_EQ(42 + i, value);
     }
 }
