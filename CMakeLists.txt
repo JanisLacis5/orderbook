@@ -9,6 +9,20 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(GTEST_GIT_TAG 52eb8108c5bdec04579160ae17225d66034bd723)
 set(CLANG_FORMAT_BIN "/usr/bin/clang-format-20")
 
+# TSAN
+option(ENABLE_TSAN "Enable ThreadSanitizer" OFF)
+add_library(project_sanitizers INTERFACE)
+if(ENABLE_TSAN)
+    target_compile_options(project_sanitizers INTERFACE
+            -fsanitize=thread
+            -fno-omit-frame-pointer
+            -g
+    )
+    target_link_options(project_sanitizers INTERFACE
+            -fsanitize=thread
+    )
+endif()
+
 # EXTERNAL LIBRARIES
 include(FetchContent)
 FetchContent_Declare(
@@ -70,6 +84,8 @@ target_link_libraries(test_core
     PRIVATE
         core
         gtest_main
+        project_sanitizers
 )
 include(GoogleTest)
-gtest_discover_tests(test_core)
+gtest_discover_tests(test_core DISCOVERY_MODE PRE_TEST)
+
