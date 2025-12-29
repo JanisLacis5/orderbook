@@ -1,5 +1,5 @@
 PROJECT_ROOT="~/dev/orderbook/"
-buildDir="build/release build/tsan build/debug"
+buildDir="build/release build/debug"
 
 for dir in $buildDir; do
   echo "cmake --build $PROJECT_ROOT$dir"

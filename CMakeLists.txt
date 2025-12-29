@@ -15,8 +15,6 @@ add_library(project_sanitizers INTERFACE)
 if(ENABLE_TSAN)
     target_compile_options(project_sanitizers INTERFACE
             -fsanitize=thread
-            -fno-omit-frame-pointer
-            -g
     )
     target_link_options(project_sanitizers INTERFACE
             -fsanitize=thread

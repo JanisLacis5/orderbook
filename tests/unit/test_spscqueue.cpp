@@ -142,10 +142,10 @@ TEST_F(FifoTest, wrap) {
 TEST_F(FifoTest, threadSafety) {
     size_t size = 1'000'000;
     SPSCqueue<testType> q{size};
-    ASSERT_EQ(q.size(), size);
+    ASSERT_EQ(q.capacity(), size);
 
     std::thread producer([&q]() {
-        for (auto i = 0; i < q.size(); ++i) {
+        for (auto i = 0; i < q.capacity(); ++i) {
             q.push(i);
         }
     });
@@ -154,7 +154,7 @@ TEST_F(FifoTest, threadSafety) {
         auto removed = 0u;
         auto val = 0u;
 
-        while (removed < q.size()) {
+        while (removed < q.capacity()) {
             while (q.pop(val)) {
                 EXPECT_EQ(val, removed++);
             }
