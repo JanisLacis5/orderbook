@@ -17,7 +17,8 @@ void __tsan_on_report() {
 using testType = unsigned int;
 class FifoTest : public testing::Test {
 public:
-    SPSCqueue<testType> fifo{4};
+    size_t cap = 4;
+    SPSCqueue<testType> fifo{cap};
 };
 
 TEST_F(FifoTest, properties) {
@@ -136,4 +137,31 @@ TEST_F(FifoTest, wrap) {
         EXPECT_TRUE(fifo.pop(value));
         EXPECT_EQ(42 + i, value);
     }
+}
+
+TEST_F(FifoTest, threadSafety) {
+    size_t size = 1'000'000;
+    SPSCqueue<testType> q{size};
+    ASSERT_EQ(q.size(), size);
+
+    std::thread producer([&q]() {
+        for (auto i = 0; i < q.size(); ++i) {
+            q.push(i);
+        }
+    });
+
+    std::thread consumer([&q]() {
+        auto removed = 0u;
+        auto val = 0u;
+
+        while (removed < q.size()) {
+            while (q.pop(val)) {
+                EXPECT_EQ(val, removed++);
+            }
+            usleep(1000);
+        }
+    });
+
+    producer.join();
+    consumer.join();
 }
