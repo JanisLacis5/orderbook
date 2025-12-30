@@ -58,8 +58,8 @@ public:
 
 private:
     Alloc allocator_;
-    size_t pushPtr_{0};
-    size_t popPtr_{0};
+    std::atomic<size_t> pushPtr_{0};
+    std::atomic<size_t> popPtr_{0};
     size_t capacity_;
     T* buffer_{nullptr};
 };
