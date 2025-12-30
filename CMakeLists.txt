@@ -8,6 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # CUSTOM VARIABLES
 set(GTEST_GIT_TAG 52eb8108c5bdec04579160ae17225d66034bd723)
 set(CLANG_FORMAT_BIN "/usr/bin/clang-format-20")
+set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 
 # TSAN
 option(ENABLE_TSAN "Enable ThreadSanitizer" OFF)
@@ -28,7 +29,12 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/google/googletest.git
   GIT_TAG ${GTEST_GIT_TAG}
 )
-FetchContent_MakeAvailable(googletest)
+FetchContent_Declare(
+    googlebenchmark
+    GIT_REPOSITORY https://github.com/google/benchmark.git
+    GIT_TAG main
+)
+FetchContent_MakeAvailable(googletest googlebenchmark)
 
 # CORE LIBRARIES / EXECUTABLES
 add_library(core
@@ -87,3 +93,12 @@ target_link_libraries(test_core
 include(GoogleTest)
 gtest_discover_tests(test_core DISCOVERY_MODE PRE_TEST)
 
+# BENCHMARK
+if (NOT ENABLE_TSAN)
+    add_executable(bench "${PROJECT_SOURCE_DIR}/tests/benchmark/bench.cpp")
+    target_link_libraries(bench PRIVATE benchmark::benchmark core)
+endif()
+
+# adding all sanitizers
+#-DCMAKE_C_FLAGS="-g -O2 -fno-omit-frame-pointer -fsanitize=address -fsanitize=thread -fno-sanitize-recover=all"
+#-DCMAKE_CXX_FLAGS="-g -O2 -fno-omit-frame-pointer -fsanitize=address -fsanitize=thread -fno-sanitize-recover=all "

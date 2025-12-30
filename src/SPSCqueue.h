@@ -7,6 +7,7 @@
 template <typename T, typename Alloc = std::allocator<T>>
 class SPSCqueue : private Alloc {
 public:
+    using value_type = T;
     using traits = std::allocator_traits<Alloc>;
     explicit SPSCqueue(size_t capacity, Alloc allocator = Alloc{})
         : allocator_{allocator},
@@ -17,17 +18,13 @@ public:
     };
 
     ~SPSCqueue() {
-        while (popPtr_ != pushPtr_) {
-            buffer_[popPtr_ % capacity_].~T();
-            ++popPtr_;
-        }
+        while (!empty())
+            pop_discard();
         traits::deallocate(allocator_, buffer_, capacity_);
     };
 
     SPSCqueue& operator=(const SPSCqueue&) = delete;
     SPSCqueue(const SPSCqueue&) = delete;
-
-    // static_assert();  assert that this is lock free
 
     size_t size() const {
         assert(popPtr_ <= pushPtr_);
@@ -55,6 +52,15 @@ public:
 
         return true;
     };
+    bool pop_discard() {
+        if (empty())
+            return false;
+
+        buffer_[popPtr_ % capacity_].~T();
+        ++popPtr_;
+
+        return true;
+    }
 
 private:
     Alloc allocator_;

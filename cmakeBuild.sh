@@ -1,4 +1,4 @@
-PROJECT_ROOT="~/dev/orderbook/"
+PROJECT_ROOT="$HOME/dev/orderbook/"
 buildDir="build/release build/debug"
 
 for dir in $buildDir; do
