@@ -27,28 +27,37 @@ public:
     SPSCqueue(const SPSCqueue&) = delete;
 
     size_t size() const {
-        assert(popPtr_ <= pushPtr_);
-        return pushPtr_ - popPtr_;
+        auto popPtr = popPtr_.load(std::memory_order_relaxed);
+        auto pushPtr = pushPtr_.load(std::memory_order_relaxed);
+
+        assert(popPtr <= pushPtr);
+        return pushPtr - popPtr;
     }
     bool empty() const { return size() == 0; };
     bool full() const { return size() == capacity_; };
-    T& front() { return buffer_[popPtr_ % capacity_ ]; }
+    T& front() {
+        auto popPtr = popPtr_.load(std::memory_order_relaxed);
+        return buffer_[popPtr % capacity_ ];
+    }
     size_t capacity() const { return capacity_; };
     bool push(const T& value) {
         if (full())
             return false;
 
+        auto pushPtr = pushPtr_.load(std::memory_order_acquire);
         new (&buffer_[pushPtr_ % capacity_]) T(value);
-        ++pushPtr_;
+        pushPtr_.fetch_add(1, std::memory_order_release);
+
         return true;
     };
     bool pop(T& out) {
         if (empty())
             return false;
 
-        out = buffer_[popPtr_ % capacity_];
-        buffer_[popPtr_ % capacity_].~T();
-        ++popPtr_;
+        auto popPtr = popPtr_.load(std::memory_order_acquire);
+        out = buffer_[popPtr % capacity_];
+        buffer_[popPtr % capacity_].~T();
+        popPtr_.fetch_add(1, std::memory_order_release);
 
         return true;
     };
@@ -56,8 +65,9 @@ public:
         if (empty())
             return false;
 
-        buffer_[popPtr_ % capacity_].~T();
-        ++popPtr_;
+        auto popPtr = popPtr_.load(std::memory_order_acquire);
+        buffer_[popPtr % capacity_].~T();
+        popPtr_.fetch_add(1, std::memory_order_release);
 
         return true;
     }

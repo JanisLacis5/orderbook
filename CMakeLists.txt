@@ -94,7 +94,7 @@ include(GoogleTest)
 gtest_discover_tests(test_core DISCOVERY_MODE PRE_TEST)
 
 # BENCHMARK
-if (NOT ENABLE_TSAN)
+if (NOT ENABLE_TSAN)  # TODO: do this better (check if built in release mode)
     add_executable(bench "${PROJECT_SOURCE_DIR}/tests/benchmark/bench.cpp")
     target_link_libraries(bench PRIVATE benchmark::benchmark core)
 endif()
