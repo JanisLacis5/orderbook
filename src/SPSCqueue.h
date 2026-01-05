@@ -43,32 +43,44 @@ public:
         return buffer_[popPtr % capacity_ ];
     }
     size_t capacity() const { return capacity_; };
-    bool push(const T& value) {
-        if (full())
-            return false;
 
+    bool push(const T& value) {
         auto pushPtr = pushPtr_.load(std::memory_order_acquire);
-        new (&buffer_[pushPtr_ % capacity_]) T(value);
+        if (full_(pushPtr, popPtrCache_)) {
+            popPtrCache_ = popPtr_.load(std::memory_order_acquire);
+            if (full_(pushPtr, popPtrCache_))
+                return false;
+        }
+
+        new (&buffer_[pushPtr % capacity_]) T(value);
         pushPtr_.fetch_add(1, std::memory_order_release);
 
         return true;
     };
-    bool pop(T& out) {
-        if (empty())
-            return false;
 
+    bool pop(T& out) {
         auto popPtr = popPtr_.load(std::memory_order_acquire);
+        if (empty_(pushPtrCache_, popPtr)) {
+            pushPtrCache_ = pushPtr_.load(std::memory_order_acquire);
+            if (empty_(pushPtrCache_, popPtr))
+                return false;
+        }
+
         out = buffer_[popPtr % capacity_];
         buffer_[popPtr % capacity_].~T();
         popPtr_.fetch_add(1, std::memory_order_release);
 
         return true;
     };
-    bool pop_discard() {
-        if (empty())
-            return false;
 
+    bool pop_discard() {
         auto popPtr = popPtr_.load(std::memory_order_acquire);
+        if (empty_(pushPtrCache_, popPtr)) {
+            pushPtrCache_ = pushPtr_.load(std::memory_order_acquire);
+            if (empty_(pushPtrCache_, popPtr))
+                return false;
+        }
+
         buffer_[popPtr % capacity_].~T();
         popPtr_.fetch_add(1, std::memory_order_release);
 
@@ -79,6 +91,11 @@ private:
     Alloc allocator_;
     alignas(cache_size) std::atomic<size_t> pushPtr_{0};
     alignas(cache_size) std::atomic<size_t> popPtr_{0};
+    alignas(cache_size) size_t pushPtrCache_{0};
+    alignas(cache_size) size_t popPtrCache_{0};
     size_t capacity_;
     T* buffer_{nullptr};
+
+    bool empty_(size_t pushp, size_t popp) const { return pushp == popp; };
+    bool full_(size_t pushp, size_t popp) const { return pushp - popp == capacity_; };
 };

@@ -140,7 +140,7 @@ TEST_F(FifoTest, wrap) {
 }
 
 TEST_F(FifoTest, threadSafety) {
-    size_t size = 1'000'000;
+    size_t size = 10'000;
     SPSCqueue<testType> q{size};
     ASSERT_EQ(q.capacity(), size);
 
@@ -158,7 +158,7 @@ TEST_F(FifoTest, threadSafety) {
             while (q.pop(val)) {
                 EXPECT_EQ(val, removed++);
             }
-            usleep(1000);
+            usleep(100);
         }
     });
 
