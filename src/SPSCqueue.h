@@ -3,6 +3,9 @@
 #include <cassert>
 #include <cstddef>
 #include <memory>
+#include <new>
+
+constexpr size_t cache_size = 64;
 
 template <typename T, typename Alloc = std::allocator<T>>
 class SPSCqueue : private Alloc {
@@ -74,8 +77,8 @@ public:
 
 private:
     Alloc allocator_;
-    std::atomic<size_t> pushPtr_{0};
-    std::atomic<size_t> popPtr_{0};
+    alignas(cache_size) std::atomic<size_t> pushPtr_{0};
+    alignas(cache_size) std::atomic<size_t> popPtr_{0};
     size_t capacity_;
     T* buffer_{nullptr};
 };
