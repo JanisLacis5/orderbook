@@ -103,7 +103,9 @@ add_executable(test_core
 )
 target_link_libraries(test_core
     PRIVATE
-        core
+        common
+        orderbook
+        data_structures
         gtest_main
         project_sanitizers
 )
@@ -113,9 +115,5 @@ gtest_discover_tests(test_core DISCOVERY_MODE PRE_TEST)
 # BENCHMARK
 if (NOT ENABLE_TSAN)  # TODO: do this better (check if built in release mode)
     add_executable(bench "${PROJECT_SOURCE_DIR}/tests/benchmark/bench.cpp")
-    target_link_libraries(bench PRIVATE benchmark::benchmark core)
+    target_link_libraries(bench PRIVATE benchmark::benchmark data_structures)
 endif()
-
-# adding all sanitizers
-#-DCMAKE_C_FLAGS="-g -O2 -fno-omit-frame-pointer -fsanitize=address -fsanitize=thread -fno-sanitize-recover=all"
-#-DCMAKE_CXX_FLAGS="-g -O2 -fno-omit-frame-pointer -fsanitize=address -fsanitize=thread -fno-sanitize-recover=all "
