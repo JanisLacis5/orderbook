@@ -1,5 +1,6 @@
 #pragma once
 
+#include <pthread.h>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -10,13 +11,10 @@
 #include <thread>
 #include <utility>
 
-#include <pthread.h>
-
-template<typename T>
+template <typename T>
 inline __attribute__((always_inline)) void doNotOptimize(T const& value) {
-    asm volatile("" : : "r,m" (value) : "memory");
+    asm volatile("" : : "r,m"(value) : "memory");
 }
-
 
 static void pinThread(int cpu) {
     if (cpu < 0) {
@@ -31,12 +29,11 @@ static void pinThread(int cpu) {
     }
 }
 
-template<typename T>
+template <typename T>
 struct isRigtorp : std::false_type {};
 
-template<typename T>
-class Bench
-{
+template <typename T>
+class Bench {
 public:
     using value_type = typename T::value_type;
 
@@ -74,22 +71,23 @@ public:
         auto stop = std::chrono::steady_clock::now();
 
         auto delta = stop - start;
-        return (iters * 1s)/delta;
+        return (iters * 1s) / delta;
     }
 
 private:
     void pop(value_type expected) {
         value_type val;
-        if constexpr(isRigtorp<T>::value) {
+        if constexpr (isRigtorp<T>::value) {
             while (auto again = not q.front()) {
                 doNotOptimize(again);
-	    }
+            }
             val = *q.front();
             q.pop();
-        } else {
+        }
+        else {
             while (auto again = not q.pop(val)) {
                 doNotOptimize(again);
-	    }
+            }
         }
         if (val != expected) {
             throw std::runtime_error("invalid value");
@@ -97,11 +95,12 @@ private:
     }
 
     void push(value_type i) {
-        if constexpr(isRigtorp<T>::value) {
+        if constexpr (isRigtorp<T>::value) {
             while (auto again = not q.try_push(i)) {
                 doNotOptimize(again);
             }
-        } else {
+        }
+        else {
             while (auto again = not q.push(i)) {
                 doNotOptimize(again);
             }
@@ -118,21 +117,19 @@ private:
     T q{fifoSize};
 };
 
-
 // "legacy" API
-template<typename T>
+template <typename T>
 auto bench(char const* name, long iters, int cpu1, int cpu2) {
     return Bench<T>{}(iters, cpu1, cpu2);
 }
 
-
-template<template<typename> class FifoT>
+template <template <typename> class FifoT>
 void bench(char const* name, int argc, char* argv[]) {
     int cpu1 = 1;
     int cpu2 = 2;
     if (argc == 3) {
-       cpu1 = std::atoi(argv[1]);
-       cpu2 = std::atoi(argv[2]);
+        cpu1 = std::atoi(argv[1]);
+        cpu2 = std::atoi(argv[2]);
     }
 
     constexpr auto iters = 400'000'000l;
@@ -141,6 +138,6 @@ void bench(char const* name, int argc, char* argv[]) {
     using value_type = std::int64_t;
 
     auto opsPerSec = bench<FifoT<value_type>>(name, iters, cpu1, cpu2);
-    std::cout << std::setw(7) << std::left << name << ": "
-        << std::setw(10) << std::right << opsPerSec << " ops/s\n";
+    std::cout << std::setw(7) << std::left << name << ": " << std::setw(10) << std::right
+              << opsPerSec << " ops/s\n";
 }

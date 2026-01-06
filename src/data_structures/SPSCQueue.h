@@ -39,7 +39,7 @@ public:
     bool full() const { return size() == capacity_; };
     T& front() {
         auto popPtr = popPtr_.load(std::memory_order_relaxed);
-        return buffer_[popPtr % capacity_ ];
+        return buffer_[popPtr % capacity_];
     }
     size_t capacity() const { return capacity_; };
 

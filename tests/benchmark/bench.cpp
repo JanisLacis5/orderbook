@@ -20,14 +20,13 @@ static void pinThread(int cpu) {
 constexpr auto cpu1 = 1;
 constexpr auto cpu2 = 2;
 
-template<typename T>
+template <typename T>
 struct isRigtorp : std::false_type {};
 
-template<typename ValueT>
+template <typename ValueT>
 struct isRigtorp<rigtorp::SPSCQueue<ValueT>> : std::true_type {};
 
-
-template<template<typename, typename...> class FifoT>
+template <template <typename, typename...> class FifoT>
 void BM_Fifo(benchmark::State& state) {
     using fifo_type = FifoT<std::int_fast64_t>;
     using value_type = typename fifo_type::value_type;
@@ -39,11 +38,13 @@ void BM_Fifo(benchmark::State& state) {
         pinThread(cpu1);
         for (auto i = value_type{};; ++i) {
             value_type val;
-            if constexpr(isRigtorp<fifo_type>::value) {
-                while (!fifo.front());
+            if constexpr (isRigtorp<fifo_type>::value) {
+                while (!fifo.front())
+                    ;
                 benchmark::DoNotOptimize(val = *fifo.front());
                 fifo.pop();
-            } else {
+            }
+            else {
                 while (not fifo.pop(val)) {
                     ;
                 }
@@ -62,11 +63,12 @@ void BM_Fifo(benchmark::State& state) {
     auto value = value_type{};
     pinThread(cpu2);
     for (auto _ : state) {
-        if constexpr(isRigtorp<fifo_type>::value) {
+        if constexpr (isRigtorp<fifo_type>::value) {
             while (auto again = not fifo.try_push(value)) {
                 benchmark::DoNotOptimize(again);
             }
-        } else {
+        }
+        else {
             while (auto again = not fifo.push(value)) {
                 benchmark::DoNotOptimize(again);
             }
@@ -79,13 +81,14 @@ void BM_Fifo(benchmark::State& state) {
     }
     state.counters["ops/sec"] = benchmark::Counter(double(value), benchmark::Counter::kIsRate);
     state.PauseTiming();
-    if constexpr(isRigtorp<fifo_type>::value) {
-        while(not fifo.try_push(-1)) {}
-    } else {
+    if constexpr (isRigtorp<fifo_type>::value) {
+        while (not fifo.try_push(-1)) {
+        }
+    }
+    else {
         fifo.push(-1);
     }
 }
-
 
 BENCHMARK_TEMPLATE(BM_Fifo, SPSCQueue);
 BENCHMARK_TEMPLATE(BM_Fifo, rigtorp::SPSCQueue);
