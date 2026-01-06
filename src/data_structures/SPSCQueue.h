@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <atomic>
 #include <memory>
 
 constexpr size_t cacheline_size = 64;

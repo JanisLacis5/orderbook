@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <type_traits>
-#include "SPSCqueue.h"
+#include "SPSCQueue.h"
 
 extern "C" {
 void __ubsan_on_report() {
@@ -18,19 +18,19 @@ using testType = unsigned int;
 class FifoTest : public testing::Test {
 public:
     size_t cap = 4;
-    SPSCqueue<testType> fifo{cap};
+    SPSCQueue<testType> fifo{cap};
 };
 
 TEST_F(FifoTest, properties) {
-    EXPECT_FALSE(std::is_default_constructible_v<SPSCqueue<testType>>);
-    EXPECT_TRUE((std::is_constructible_v<SPSCqueue<testType>, unsigned long>));
+    EXPECT_FALSE(std::is_default_constructible_v<SPSCQueue<testType>>);
+    EXPECT_TRUE((std::is_constructible_v<SPSCQueue<testType>, unsigned long>));
     EXPECT_TRUE(
-        (std::is_constructible_v<SPSCqueue<testType>, unsigned long, std::allocator<testType>>));
-    EXPECT_FALSE(std::is_copy_constructible_v<SPSCqueue<testType>>);
-    EXPECT_FALSE(std::is_move_constructible_v<SPSCqueue<testType>>);
-    EXPECT_FALSE(std::is_copy_assignable_v<SPSCqueue<testType>>);
-    EXPECT_FALSE(std::is_move_assignable_v<SPSCqueue<testType>>);
-    EXPECT_TRUE(std::is_destructible_v<SPSCqueue<testType>>);
+        (std::is_constructible_v<SPSCQueue<testType>, unsigned long, std::allocator<testType>>));
+    EXPECT_FALSE(std::is_copy_constructible_v<SPSCQueue<testType>>);
+    EXPECT_FALSE(std::is_move_constructible_v<SPSCQueue<testType>>);
+    EXPECT_FALSE(std::is_copy_assignable_v<SPSCQueue<testType>>);
+    EXPECT_FALSE(std::is_move_assignable_v<SPSCQueue<testType>>);
+    EXPECT_TRUE(std::is_destructible_v<SPSCQueue<testType>>);
 }
 
 TEST_F(FifoTest, initialState) {
@@ -141,7 +141,7 @@ TEST_F(FifoTest, wrap) {
 
 TEST_F(FifoTest, threadSafety) {
     size_t size = 10'000;
-    SPSCqueue<testType> q{size};
+    SPSCQueue<testType> q{size};
     ASSERT_EQ(q.capacity(), size);
 
     std::thread producer([&q]() {

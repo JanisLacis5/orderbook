@@ -63,6 +63,18 @@ target_link_libraries(orderbook
     PUBLIC data_structures common
 )
 
+# API
+add_library(publicAPI
+    ${PROJECT_SOURCE_DIR}/src/public_api/PublicAPI.cpp
+)
+target_include_directories(publicAPI
+    PUBLIC
+        ${PROJECT_SOURCE_DIR}/src/public_api
+)
+target_link_libraries(publicAPI
+    PUBLIC data_structures
+)
+
 # Main
 add_executable(app
     ${PROJECT_SOURCE_DIR}/src/main.cpp
