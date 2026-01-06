@@ -5,7 +5,7 @@
 #include <memory>
 #include <new>
 
-constexpr size_t cache_size = 64;
+constexpr size_t cacheline_size = 64;
 
 template <typename T, typename Alloc = std::allocator<T>>
 class SPSCqueue : private Alloc {
@@ -89,10 +89,10 @@ public:
 
 private:
     Alloc allocator_;
-    alignas(cache_size) std::atomic<size_t> pushPtr_{0};
-    alignas(cache_size) std::atomic<size_t> popPtr_{0};
-    alignas(cache_size) size_t pushPtrCache_{0};
-    alignas(cache_size) size_t popPtrCache_{0};
+    alignas(cacheline_size) std::atomic<size_t> pushPtr_{0};
+    alignas(cacheline_size) std::atomic<size_t> popPtr_{0};
+    alignas(cacheline_size) size_t pushPtrCache_{0};
+    alignas(cacheline_size) size_t popPtrCache_{0};
     size_t capacity_;
     T* buffer_{nullptr};
 
