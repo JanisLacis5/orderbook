@@ -7,11 +7,11 @@
 constexpr size_t cacheline_size = 64;
 
 template <typename T, typename Alloc = std::allocator<T>>
-class SPSCqueue : private Alloc {
+class SPSCQueue : private Alloc {
 public:
     using value_type = T;
     using traits = std::allocator_traits<Alloc>;
-    explicit SPSCqueue(size_t capacity, Alloc allocator = Alloc{})
+    explicit SPSCQueue(size_t capacity, Alloc allocator = Alloc{})
         : allocator_{allocator},
           capacity_{capacity},
           buffer_{traits::allocate(allocator_, capacity)} {
@@ -19,14 +19,14 @@ public:
             throw std::logic_error("Capacity of the queue has to be non-zero");
     };
 
-    ~SPSCqueue() {
+    ~SPSCQueue() {
         while (!empty())
             pop_discard();
         traits::deallocate(allocator_, buffer_, capacity_);
     };
 
-    SPSCqueue& operator=(const SPSCqueue&) = delete;
-    SPSCqueue(const SPSCqueue&) = delete;
+    SPSCQueue& operator=(const SPSCQueue&) = delete;
+    SPSCQueue(const SPSCQueue&) = delete;
 
     size_t size() const {
         auto popPtr = popPtr_.load(std::memory_order_relaxed);

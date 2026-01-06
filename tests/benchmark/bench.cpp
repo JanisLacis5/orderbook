@@ -1,7 +1,7 @@
 #include <benchmark/benchmark.h>
 #include <iostream>
 #include <thread>
-#include "SPSCqueue.h"
+#include "SPSCQueue.h"
 #include "rigtorp.h"
 
 static void pinThread(int cpu) {
@@ -87,7 +87,7 @@ void BM_Fifo(benchmark::State& state) {
 }
 
 
-BENCHMARK_TEMPLATE(BM_Fifo, SPSCqueue);
+BENCHMARK_TEMPLATE(BM_Fifo, SPSCQueue);
 BENCHMARK_TEMPLATE(BM_Fifo, rigtorp::SPSCQueue);
 
 BENCHMARK_MAIN();
