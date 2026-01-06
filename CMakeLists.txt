@@ -37,21 +37,38 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest googlebenchmark)
 
 # CORE LIBRARIES / EXECUTABLES
-add_library(core
-    src/orderbook.cpp
+# Data Structures
+add_library(data_structures INTERFACE)
+target_include_directories(data_structures
+    INTERFACE
+        ${PROJECT_SOURCE_DIR}/src/data_structures
 )
 
-target_include_directories(core
+# Common
+add_library(common INTERFACE)
+target_include_directories(common
+    INTERFACE
+        ${PROJECT_SOURCE_DIR}/src/common
+)
+
+# Orderbook
+add_library(orderbook
+    ${PROJECT_SOURCE_DIR}/src/orderbook/orderbook.cpp
+)
+target_include_directories(orderbook
     PUBLIC
-        ${PROJECT_SOURCE_DIR}/src
+        ${PROJECT_SOURCE_DIR}/src/orderbook
 )
-
-add_executable(orderbook
-    src/main.cpp
-)
-
 target_link_libraries(orderbook
-    PRIVATE core
+    PUBLIC data_structures common
+)
+
+# Main
+add_executable(app
+    ${PROJECT_SOURCE_DIR}/src/main.cpp
+)
+target_link_libraries(app
+    PRIVATE orderbook
 )
 
 # FORMATTING TARGET
