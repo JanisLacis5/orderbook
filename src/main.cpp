@@ -1,7 +1,9 @@
 #include "orderbook.h"
+#include "PublicAPI.h"
 
 int main() {
-    Orderbook orderbook;
+    PublicAPI api;
+    api.run();
     return 0;
 }
 

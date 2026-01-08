@@ -4,7 +4,10 @@
 #include <sys/socket.h>
 #include <array>
 #include <cerrno>
+#include <fcntl.h>
+
 #include "SPSCQueue.h"
+#include <iostream>
 
 int PublicAPI::open_sck() {
     int fd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
@@ -30,6 +33,31 @@ void PublicAPI::epoll_add(int fd) {
     epoll_event ev{.events = EPOLLIN, .data = {.fd = fd}};
     if (::epoll_ctl(epollfd_, EPOLL_CTL_ADD, fd, &ev) == -1)
         throw std::system_error(errno, std::system_category(), "epoll_ctl");
+}
+
+int PublicAPI::accept_sck() {
+    sockaddr_in local{};
+    socklen_t addrlen = sizeof(local);
+    int connFd = accept(serverSockFd_, (struct sockaddr*)&local, &addrlen);
+    if (connFd == -1) {
+        perror("accept");
+        return -1;
+    }
+
+    // Make non-blocking
+    fcntl(connFd, F_SETFL, fcntl(connFd, F_GETFL, 0) | O_NONBLOCK);
+
+    uint32_t events = EPOLLIN | EPOLLET;
+    epoll_event ev{.events = events, .data = {.fd = connFd}};
+    if (epoll_ctl(epollfd_, EPOLL_CTL_ADD, connFd, &ev) == -1) {
+        perror("epoll_ctl: conn_sock");
+        return -1;
+    }
+}
+
+void PublicAPI::handle_message(int fd) {
+    std::cout << "new messsage" << std::endl;
+    return;
 }
 
 void PublicAPI::run() {
