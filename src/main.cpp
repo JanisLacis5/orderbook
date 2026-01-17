@@ -1,5 +1,5 @@
-#include "orderbook.h"
 #include "PublicAPI.h"
+#include "orderbook.h"
 
 int main() {
     PublicAPI api;

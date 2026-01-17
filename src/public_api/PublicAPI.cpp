@@ -1,13 +1,12 @@
 #include "PublicAPI.h"
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <array>
 #include <cerrno>
-#include <fcntl.h>
-
-#include "SPSCQueue.h"
 #include <iostream>
+#include "SPSCQueue.h"
 
 int PublicAPI::open_sck() {
     int fd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
