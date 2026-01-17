@@ -12,16 +12,14 @@ int PublicAPI::open_sck() {
         throw std::system_error(errno, std::system_category(), "socket");
 
     int so_reuseaddr_val = 1;
-    if (::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr_val, sizeof(so_reuseaddr_val)) ==
-        -1)
+    if (::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr_val, sizeof(so_reuseaddr_val)) == -1)
         throw std::system_error(errno, std::system_category(), "setsockopt");
 
     return fd;
 }
 
 void PublicAPI::bind_sck(int fd, int port, in_addr_t ipaddr) {
-    sockaddr_in addr{
-        .sin_family = AF_INET, .sin_port = htons(port), .sin_addr = {.s_addr = ipaddr}};
+    sockaddr_in addr{.sin_family = AF_INET, .sin_port = htons(port), .sin_addr = {.s_addr = ipaddr}};
     if (::bind(fd, (sockaddr*)&addr, sizeof(addr)) == -1)
         throw std::system_error(errno, std::system_category(), "bind");
 }

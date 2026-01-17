@@ -1,8 +1,8 @@
 #pragma once
 
+#include <atomic>
 #include <cassert>
 #include <cstddef>
-#include <atomic>
 #include <memory>
 
 constexpr size_t cacheline_size = 64;
@@ -13,9 +13,7 @@ public:
     using value_type = T;
     using traits = std::allocator_traits<Alloc>;
     explicit SPSCQueue(size_t capacity, Alloc allocator = Alloc{})
-        : allocator_{allocator},
-          capacity_{capacity},
-          buffer_{traits::allocate(allocator_, capacity)} {
+        : allocator_{allocator}, capacity_{capacity}, buffer_{traits::allocate(allocator_, capacity)} {
         if (capacity == 0)
             throw std::logic_error("Capacity of the queue has to be non-zero");
     };

@@ -17,8 +17,7 @@ struct LevelView {
 
 class Orderbook {
 public:
-    std::pair<orderId_t, trades_t> addOrder(quantity_t quantity, price_t price, OrderType type,
-                                            Side side);
+    std::pair<orderId_t, trades_t> addOrder(quantity_t quantity, price_t price, OrderType type, Side side);
     void cancelOrder(orderId_t orderId);
     std::pair<orderId_t, trades_t> modifyOrder(orderId_t orderId, ModifyOrder modifications);
     std::optional<price_t> bestAsk() const;

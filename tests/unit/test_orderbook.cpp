@@ -158,8 +158,7 @@ TEST_F(PassiveOrderbookTest, FIFOOnTheSameLevel) {
 
     auto orderId1 = addRestingOrder(quantity, price, OrderType::GoodTillCancel, Side::Buy);
     auto orderId2 = addRestingOrder(quantity, price, OrderType::GoodTillCancel, Side::Buy);
-    auto [oppositeOrderId, oppositeOrderTrades] =
-        orderbook.addOrder(quantity, price, OrderType::Market, Side::Sell);
+    auto [oppositeOrderId, oppositeOrderTrades] = orderbook.addOrder(quantity, price, OrderType::Market, Side::Sell);
 
     // Order1 and the opposite one should not exist anymore so they will throw
     // on cancelation
@@ -494,8 +493,7 @@ TEST_F(PassiveOrderbookTest, LimitOrderDoesNotTradeAtWorsePriceThanLimit) {
     auto orderId4 = addRestingOrder(q, price(), OrderType::GoodTillCancel, Side::Sell);
     auto orderId5 = addRestingOrder(q, price(), OrderType::GoodTillCancel, Side::Sell);
 
-    auto [orderId, trades] =
-        orderbook.addOrder(q, defaultPrice, OrderType::GoodTillCancel, Side::Buy);
+    auto [orderId, trades] = orderbook.addOrder(q, defaultPrice, OrderType::GoodTillCancel, Side::Buy);
 
     price_t prevPrice = 0;
     for (const auto& trade : trades) {

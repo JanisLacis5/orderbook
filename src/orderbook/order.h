@@ -5,8 +5,7 @@
 
 class Order {
 public:
-    Order(orderId_t orderid, quantity_t quantity, price_t price, OrderType type, Side side,
-          microsec_t opentime)
+    Order(orderId_t orderid, quantity_t quantity, price_t price, OrderType type, Side side, microsec_t opentime)
         : orderid_{orderid},
           initialQuantity_{quantity},
           remainingQuantity_{quantity},

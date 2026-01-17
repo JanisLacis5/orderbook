@@ -138,6 +138,5 @@ void bench(char const* name, int argc, char* argv[]) {
     using value_type = std::int64_t;
 
     auto opsPerSec = bench<FifoT<value_type>>(name, iters, cpu1, cpu2);
-    std::cout << std::setw(7) << std::left << name << ": " << std::setw(10) << std::right
-              << opsPerSec << " ops/s\n";
+    std::cout << std::setw(7) << std::left << name << ": " << std::setw(10) << std::right << opsPerSec << " ops/s\n";
 }

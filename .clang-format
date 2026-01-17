@@ -15,7 +15,7 @@ BreakBeforeBraces: Custom
 BraceWrapping:
   BeforeElse: true
   BeforeCatch: true
-ColumnLimit: 100 
+ColumnLimit: 120 
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 PointerAlignment: Left
 DerivePointerAlignment: false
