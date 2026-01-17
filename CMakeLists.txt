@@ -13,21 +13,21 @@ set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 # TSAN
 option(ENABLE_TSAN "Enable ThreadSanitizer" OFF)
 add_library(project_sanitizers INTERFACE)
-if(ENABLE_TSAN)
+if (ENABLE_TSAN)
     target_compile_options(project_sanitizers INTERFACE
-            -fsanitize=thread
+        -fsanitize=thread
     )
     target_link_options(project_sanitizers INTERFACE
-            -fsanitize=thread
+        -fsanitize=thread
     )
-endif()
+endif ()
 
 # EXTERNAL LIBRARIES
 include(FetchContent)
 FetchContent_Declare(
-  googletest
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG ${GTEST_GIT_TAG}
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG ${GTEST_GIT_TAG}
 )
 FetchContent_Declare(
     googlebenchmark
@@ -41,14 +41,14 @@ FetchContent_MakeAvailable(googletest googlebenchmark)
 add_library(data_structures INTERFACE)
 target_include_directories(data_structures
     INTERFACE
-        ${PROJECT_SOURCE_DIR}/src/data_structures
+    ${PROJECT_SOURCE_DIR}/src/data_structures
 )
 
 # Common
 add_library(common INTERFACE)
 target_include_directories(common
     INTERFACE
-        ${PROJECT_SOURCE_DIR}/src/common
+    ${PROJECT_SOURCE_DIR}/src/common
 )
 
 # Orderbook
@@ -57,7 +57,7 @@ add_library(orderbook
 )
 target_include_directories(orderbook
     PUBLIC
-        ${PROJECT_SOURCE_DIR}/src/orderbook
+    ${PROJECT_SOURCE_DIR}/src/orderbook
 )
 target_link_libraries(orderbook
     PUBLIC data_structures common
@@ -69,7 +69,7 @@ add_library(publicAPI
 )
 target_include_directories(publicAPI
     PUBLIC
-        ${PROJECT_SOURCE_DIR}/src/public_api
+    ${PROJECT_SOURCE_DIR}/src/public_api
 )
 target_link_libraries(publicAPI
     PUBLIC data_structures
@@ -80,13 +80,13 @@ add_executable(app
     ${PROJECT_SOURCE_DIR}/src/main.cpp
 )
 target_link_libraries(app
-    PRIVATE orderbook
+    PRIVATE orderbook publicAPI
 )
 
 # FORMATTING TARGET
-if(NOT EXISTS "${CMAKE_SOURCE_DIR}/.clang-format")
+if (NOT EXISTS "${CMAKE_SOURCE_DIR}/.clang-format")
     message(FATAL_ERROR "No .clang-format file found in ${CMAKE_SOURCE_DIR}")
-endif()
+endif ()
 
 file(GLOB_RECURSE FORMAT_FILES CONFIGURE_DEPENDS
     "${PROJECT_SOURCE_DIR}/src/*.cpp"
@@ -111,11 +111,11 @@ add_executable(test_core
 )
 target_link_libraries(test_core
     PRIVATE
-        common
-        orderbook
-        data_structures
-        gtest_main
-        project_sanitizers
+    common
+    orderbook
+    data_structures
+    gtest_main
+    project_sanitizers
 )
 include(GoogleTest)
 gtest_discover_tests(test_core DISCOVERY_MODE PRE_TEST)
@@ -124,4 +124,4 @@ gtest_discover_tests(test_core DISCOVERY_MODE PRE_TEST)
 if (NOT ENABLE_TSAN)  # TODO: do this better (check if built in release mode)
     add_executable(bench "${PROJECT_SOURCE_DIR}/tests/benchmark/bench.cpp")
     target_link_libraries(bench PRIVATE benchmark::benchmark data_structures)
-endif()
+endif ()
