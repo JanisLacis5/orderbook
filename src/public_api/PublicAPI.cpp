@@ -35,21 +35,26 @@ void PublicAPI::epoll_add(int fd) {
 int PublicAPI::accept_sck() {
     sockaddr_in local{};
     socklen_t addrlen = sizeof(local);
-    int connFd = accept(serverSockFd_, (struct sockaddr*)&local, &addrlen);
+    int connFd = ::accept(serverSockFd_, (sockaddr*)&local, &addrlen);
     if (connFd == -1) {
         perror("accept");
         return -1;
     }
 
     // Make non-blocking
-    fcntl(connFd, F_SETFL, fcntl(connFd, F_GETFL, 0) | O_NONBLOCK);
+    ::fcntl(connFd, F_SETFL, fcntl(connFd, F_GETFL, 0) | O_NONBLOCK);
 
     uint32_t events = EPOLLIN | EPOLLET;
     epoll_event ev{.events = events, .data = {.fd = connFd}};
-    if (epoll_ctl(epollfd_, EPOLL_CTL_ADD, connFd, &ev) == -1) {
+    if (::epoll_ctl(epollfd_, EPOLL_CTL_ADD, connFd, &ev) == -1) {
         perror("epoll_ctl: conn_sock");
         return -1;
     }
+
+    auto conn = std::make_unique<Conn>(connFd);
+    conns_[connFd].push_back(std::move(conn));
+
+    return 0;
 }
 
 void PublicAPI::handle_message(int fd) {
