@@ -2,7 +2,6 @@
 
 #include <netinet/in.h>
 #include <map>
-#include <vector>
 #include "SPSCQueue.h"
 
 constexpr size_t MESSAGE_QUEUE_SIZE = 100'000;
@@ -34,7 +33,7 @@ private:
     int serverSockFd_{-1};
     int epollfd_{-1};
     SPSCQueue<int> message_queue_;
-    std::map<int, std::vector<std::unique_ptr<Conn>>> conns_;
+    std::map<int, std::unique_ptr<Conn>> conns_;
 
     int open_sck();
     void bind_sck(int fd, int port = 8000, in_addr_t ipaddr = INADDR_ANY);

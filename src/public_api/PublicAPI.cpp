@@ -52,7 +52,7 @@ int PublicAPI::accept_sck() {
     }
 
     auto conn = std::make_unique<Conn>(connFd);
-    conns_[connFd].push_back(std::move(conn));
+    conns_[connFd] = std::move(conn);
 
     return 0;
 }
