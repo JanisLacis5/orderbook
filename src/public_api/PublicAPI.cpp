@@ -51,14 +51,15 @@ int PublicAPI::accept_sck() {
         return -1;
     }
 
-    auto conn = std::make_unique<Conn>(connFd);
-    conns_[connFd] = std::move(conn);
-
+    conns_[connFd] = std::make_unique<Conn>();
     return 0;
 }
 
-void PublicAPI::handle_message(int fd) {
-    std::cout << "new messsage" << std::endl;
+void PublicAPI::handle_read_sck(int fd) {
+    return;
+}
+
+void PublicAPI::handle_write_sck(int fd) {
     return;
 }
 
@@ -68,14 +69,14 @@ void PublicAPI::run() {
     if (::listen(serverSockFd_, SOMAXCONN) == -1)
         throw std::system_error(errno, std::system_category(), "listen");
 
-    epollfd_ = epoll_create1(0);
+    epollfd_ = ::epoll_create1(0);
     if (epollfd_ == -1)
         throw std::system_error(errno, std::system_category(), "epoll_create");
     epoll_add(serverSockFd_);
 
     std::array<epoll_event, MAX_EVENTS> events;
     while (true) {
-        int nfds = ::epoll_wait(epollfd_, events.data(), MAX_EVENTS, -1);
+        int nfds = ::epoll_wait(epollfd_, events.data(), MAX_EVENTS, 0);
         if (nfds == -1) {
             if (errno == EINTR)
                 continue;
@@ -88,8 +89,23 @@ void PublicAPI::run() {
                 accept_sck();
             }
             else {
-                handle_message(incfd);
+                auto* conn = conns_[incfd].get();
+                to_read_.push(incfd);
             }
         }
+
+        while (!to_read_.empty()) {
+            auto topfd = to_read_.front();
+            to_read_.pop();
+
+            handle_read_sck(topfd);
+        }
+
+        while (!to_write_.empty()) {
+            auto topfd = to_write_.front();
+            to_write_.pop();
+
+            handle_write_sck(topfd);
+        }
     }
-};
+}
