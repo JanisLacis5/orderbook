@@ -4,7 +4,7 @@
 #include <array>
 #include <map>
 #include <queue>
-#include <set>
+#include <unordered_set>
 #include "SPSCQueue.h"
 #include "usings.h"
 
@@ -35,19 +35,20 @@ public:
     void run();
 
 private:
-    using messageQueue_t = SPSCQueue<std::array<std::byte, MAX_MESSAGE_LEN>>;
+    using MessageQueue_t = SPSCQueue<std::array<std::byte, MAX_MESSAGE_LEN>>;
 
     int serverSockFd_{-1};
     int epollfd_{-1};
-    std::set<userId_t> userIds_;  // necessary to detect for clashes
+    std::unordered_set<userId_t> userIds_;  // necessary to detect for clashes
 
-    std::map<userId_t, messageQueue_t> messageQueues_;
+    std::map<userId_t, std::unique_ptr<MessageQueue_t>> messageQueues_;
 
     std::map<int, std::unique_ptr<Conn>> conns_;
     // TODO: make these thread safe and process messages on multiple threads
     std::queue<int> incomings_;
 
     int openSck();
+    void connInit();
     uint64_t generateUserId();
     API_STATUS_CODE bindSck(int fd, int port = 8000, in_addr_t ipaddr = INADDR_ANY);
     API_STATUS_CODE epollAdd(int fd);

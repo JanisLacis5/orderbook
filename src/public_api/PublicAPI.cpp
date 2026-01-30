@@ -66,6 +66,14 @@ API_STATUS_CODE PublicAPI::epollAdd(int fd) {
     return API_STATUS_CODE::SUCCESS;
 }
 
+void PublicAPI::connInit() {
+    auto conn = std::make_unique<Conn>();
+    auto userId = generateUserId();
+
+    conn->holderId = userId;
+    messageQueues_[userId] = std::make_unique<MessageQueue_t>(MESSAGE_QUEUE_SIZE);
+}
+
 API_STATUS_CODE PublicAPI::acceptSck() {
     sockaddr_in local{};
     socklen_t addrlen = sizeof(local);
@@ -86,9 +94,7 @@ API_STATUS_CODE PublicAPI::acceptSck() {
         return API_STATUS_CODE::SYSTEM_ERROR;
     }
 
-    // TODO: generate userId and add it to the conn->holderId
-    // TODO: create a new spsc queue in messageQueues map for the new user
-    conns_[connFd] = std::make_unique<Conn>();
+    connInit();
     return API_STATUS_CODE::SUCCESS;
 }
 
@@ -135,11 +141,11 @@ API_STATUS_CODE PublicAPI::handleReadSck(int fd) {
         }
 
         if (mesLen <= received) {
-            messageQueue_t& queue = messageQueues_[conn->holderId];
+            auto& queue = messageQueues_[conn->holderId];
             std::array<std::byte, MAX_MESSAGE_LEN> message;
 
             std::copy(buf.begin(), buf.begin() + mesLen, message.begin());
-            queue.push(buf);
+            queue->push(buf);
             received -= mesLen;
         }
     }
