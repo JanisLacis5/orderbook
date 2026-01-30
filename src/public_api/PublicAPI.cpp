@@ -6,8 +6,15 @@
 #include <array>
 #include <bit>
 #include <cerrno>
-#include <cstring>
 #include <random>
+#include <cstring>
+
+/*
+    TODO:
+        - save send buffer in the conn->out
+        - if there is an EWOULDBLCK or EAGAIN error, do not remove EPOLLOUT flag and process in another run
+        - make this conceptually similar to the reading 
+*/
 
 int PublicAPI::openSck() {
     int fd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
@@ -155,14 +162,7 @@ API_STATUS_CODE PublicAPI::handleReadSck(int fd) {
     return API_STATUS_CODE::SUCCESS;
 }
 
-void PublicAPI::sendRes(int fd, API_STATUS_CODE status, std::span<std::array<std::byte, MAX_MESSAGE_LEN>>& data) {
-    uint32_t events = EPOLLOUT | EPOLLET;
-    epoll_event ev{.events = events, .data = {.fd = fd}};
-    if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev) == -1) {
-        perror("[sendRes]: epoll_ctl");
-        return;
-    }
-
+void PublicAPI::sendRes(int fd, API_STATUS_CODE status, std::span<std::byte> data) {
     APIResponse hdr;
     switch (status) {
         case API_STATUS_CODE::SUCCESS:
@@ -179,29 +179,50 @@ void PublicAPI::sendRes(int fd, API_STATUS_CODE status, std::span<std::array<std
             break;
     }
     assert(hdr.message.size() <= MAX_HDR_MESSAGE_SIZE);
-    hdr.message.resize(MAX_HDR_MESSAGE_SIZE, '\0');
+    hdr.message.resize(HDR_MESSAGE_SIZE, '\0');
+
+    auto totalBufSize = data.size() + HDR_SIZE;
+    std::array<std::byte, MAX_RESPONSE_LEN> buf;
 
     uint32_t code = htonl(hdr.code);
     auto codeBytes = std::bit_cast<std::array<std::byte, 4>>(code);
 
-    std::array<std::byte, MAX_RESPONSE_LEN> buf;
+    std::copy(codeBytes.begin(), codeBytes.end(), buf.begin());
+    std::memcpy(buf.data() + 4, hdr.message.data(), HDR_MESSAGE_SIZE);
+    std::copy(data.begin(), data.begin() + data.size(), buf.begin() + HDR_SIZE);
 
-    std::copy(buf.begin(), buf.begin() + 4, codeBytes.begin());
-    std::memcpy(buf.data() + 4, hdr.message.data(), hdr.message.size());
-
-    auto sent = 0u;
-    auto mesSize = data.size() + 36;  // TODO: replace with constexpr constant
-    auto n = ::send(fd, buf.data(), mesSize, 0);
-    // TODO: error handling
-    sent += n;
-
-    while (sent < mesSize) {
-        n = ::send(fd, buf.data() + sent, mesSize - sent, 0);
-        // TODO: error handling
-        sent += n;
+    uint32_t events = EPOLLOUT | EPOLLET;
+    epoll_event ev{.events = events, .data = {.fd = fd}};
+    if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev) == -1) {
+        perror("[sendRes]: epoll_ctl1");
+        return;
     }
 
+    auto sent = 0u;
+    auto n = ::send(fd, buf.data(), totalBufSize, 0);
+    if (n == 0) {
+        perror("[sendRes]: send1");
+        return;
+    } 
+    sent += n;
+
+    while (sent < totalBufSize && n > 0) {
+        n = ::send(fd, buf.data() + sent, totalBufSize - sent, 0);
+        if (n < 0) {
+            perror("[sendRes]: send2");
+            return;
+        } 
+
+        sent += n;
+    }
     hdr.payloadSize = data.size();
+
+    events = EPOLLIN | EPOLLET;
+    ev = {.events = events, .data = {.fd = fd}};
+    if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev) == -1) {
+        perror("[sendRes]: epoll_ctl2");
+        return;
+    }
 }
 
 // TODO: replace throws with responses to the sender

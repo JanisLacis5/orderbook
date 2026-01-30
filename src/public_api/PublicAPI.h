@@ -9,7 +9,8 @@
 
 constexpr size_t MESSAGE_QUEUE_SIZE = 100'000;
 constexpr size_t MAX_MESSAGE_LEN = 4096;
-constexpr size_t MAX_HDR_MESSAGE_SIZE = 32;
+constexpr size_t HDR_MESSAGE_SIZE = 32;
+constexpr size_t HDR_SIZE = HDR_MESSAGE_SIZE + 4;
 constexpr size_t MAX_RESPONSE_LEN = 1'000'000;
 constexpr int MAX_BYTES_PER_HANDLE = 100'000;
 constexpr int MAX_EVENTS = 100;
@@ -59,7 +60,7 @@ private:
 
     int openSck();
     void connInit(int fd);
-    void sendRes(int fd, API_STATUS_CODE status, std::span<std::array<std::byte, MAX_MESSAGE_LEN>>& data);
+    void sendRes(int fd, API_STATUS_CODE status, std::span<std::byte> data);
     uint64_t generateUserId();
     API_STATUS_CODE bindSck(int fd, int port = 8000, in_addr_t ipaddr = INADDR_ANY);
     API_STATUS_CODE epollAdd(int fd);
