@@ -6,6 +6,7 @@
 #include <array>
 #include <bit>
 #include <cerrno>
+#include <cstring>
 #include <random>
 
 int PublicAPI::openSck() {
@@ -38,10 +39,9 @@ userId_t PublicAPI::generateUserId() {
 
     userId_t id = (timestamp << 22) | random;
 
-    if (userIds_.find(id) != userIds_.end())
+    if (uid2fd_.find(id) != uid2fd_.end())
         return generateUserId();
 
-    userIds_.insert(id);
     return id;
 }
 
@@ -66,11 +66,13 @@ API_STATUS_CODE PublicAPI::epollAdd(int fd) {
     return API_STATUS_CODE::SUCCESS;
 }
 
-void PublicAPI::connInit() {
+void PublicAPI::connInit(int fd) {
     auto conn = std::make_unique<Conn>();
     auto userId = generateUserId();
 
+    conn->fd = fd;
     conn->holderId = userId;
+    uid2fd_[userId] = fd;
     messageQueues_[userId] = std::make_unique<MessageQueue_t>(MESSAGE_QUEUE_SIZE);
 }
 
@@ -94,7 +96,7 @@ API_STATUS_CODE PublicAPI::acceptSck() {
         return API_STATUS_CODE::SYSTEM_ERROR;
     }
 
-    connInit();
+    connInit(connFd);
     return API_STATUS_CODE::SUCCESS;
 }
 
@@ -153,6 +155,55 @@ API_STATUS_CODE PublicAPI::handleReadSck(int fd) {
     return API_STATUS_CODE::SUCCESS;
 }
 
+void PublicAPI::sendRes(int fd, API_STATUS_CODE status, std::span<std::array<std::byte, MAX_MESSAGE_LEN>>& data) {
+    uint32_t events = EPOLLOUT | EPOLLET;
+    epoll_event ev{.events = events, .data = {.fd = fd}};
+    if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev) == -1) {
+        perror("[sendRes]: epoll_ctl");
+        return;
+    }
+
+    APIResponse hdr;
+    switch (status) {
+        case API_STATUS_CODE::SUCCESS:
+            hdr.message = "Message processed successfuly";
+            hdr.code = 200;
+            break;
+        case API_STATUS_CODE::SYSTEM_ERROR:
+            hdr.message = "Internal error";
+            hdr.code = 500;
+            break;
+        case API_STATUS_CODE::BAD_MESSAGE_LEN:
+            hdr.message = "Invalid message length";
+            hdr.code = 400;
+            break;
+    }
+    assert(hdr.message.size() <= MAX_HDR_MESSAGE_SIZE);
+    hdr.message.resize(MAX_HDR_MESSAGE_SIZE, '\0');
+
+    uint32_t code = htonl(hdr.code);
+    auto codeBytes = std::bit_cast<std::array<std::byte, 4>>(code);
+
+    std::array<std::byte, MAX_RESPONSE_LEN> buf;
+
+    std::copy(buf.begin(), buf.begin() + 4, codeBytes.begin());
+    std::memcpy(buf.data() + 4, hdr.message.data(), hdr.message.size());
+
+    auto sent = 0u;
+    auto mesSize = data.size() + 36;  // TODO: replace with constexpr constant
+    auto n = ::send(fd, buf.data(), mesSize, 0);
+    // TODO: error handling
+    sent += n;
+
+    while (sent < mesSize) {
+        n = ::send(fd, buf.data() + sent, mesSize - sent, 0);
+        // TODO: error handling
+        sent += n;
+    }
+
+    hdr.payloadSize = data.size();
+}
+
 // TODO: replace throws with responses to the sender
 void PublicAPI::run() {
     serverSockFd_ = openSck();
@@ -177,7 +228,10 @@ void PublicAPI::run() {
         for (int i = 0; i < nfds; ++i) {
             int incfd = events[i].data.fd;
             if (incfd == serverSockFd_) {
-                acceptSck();
+                API_STATUS_CODE status = acceptSck();
+                if (status != API_STATUS_CODE::SUCCESS) {
+                    sendRes(incfd, status);
+                }
             }
             else {
                 auto* conn = conns_[incfd].get();
