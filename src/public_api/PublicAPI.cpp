@@ -4,8 +4,8 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <array>
+#include <bit>
 #include <cerrno>
-#include <iostream>
 
 int PublicAPI::open_sck() {
     int fd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
@@ -41,7 +41,7 @@ int PublicAPI::accept_sck() {
     }
 
     // Make non-blocking
-    ::fcntl(connFd, F_SETFL, fcntl(connFd, F_GETFL, 0) | O_NONBLOCK);
+    ::fcntl(connFd, F_SETFL, ::fcntl(connFd, F_GETFL, 0) | O_NONBLOCK);
 
     uint32_t events = EPOLLIN | EPOLLET;
     epoll_event ev{.events = events, .data = {.fd = connFd}};
@@ -50,16 +50,43 @@ int PublicAPI::accept_sck() {
         return -1;
     }
 
+    // TODO: generate userId and add it to the conn->holderId
+    // TODO: create a new spsc queue in messageQueues map for the new user
     conns_[connFd] = std::make_unique<Conn>();
     return 0;
 }
 
 void PublicAPI::handle_read_sck(int fd) {
-    return;
-}
+    auto& conn = conns_.at(fd);
+    auto& buf = conn->in;
+    auto totalRead = 0u;
+    auto received = 0u;
 
-void PublicAPI::handle_write_sck(int fd) {
-    return;
+    while (true) {
+        auto n = ::read(fd, buf.data() + totalRead, 4);
+        // TODO: error handling, break out of the loop here at some point
+        received += n;
+        totalRead += n;
+
+        const uint32_t mesLen = std::bit_cast<uint32_t>(std::array<std::byte, 4>{buf[0], buf[1], buf[2], buf[3]});
+        // TODO: meslen checks (> 0 and < maxlen)
+
+        while (mesLen < received) {
+            n = ::read(fd, buf.data() + totalRead, MAX_MESSAGE_LEN);
+            // TODO: error handling
+            received += n;
+            totalRead += n;
+        }
+
+        if (mesLen <= received) {
+            messageQueue_t& queue = messageQueues_[conn->holderId];
+            std::array<std::byte, MAX_MESSAGE_LEN> message;
+
+            std::copy(buf.begin(), buf.begin() + mesLen, message.begin());
+            queue.push(buf);
+            received -= mesLen;
+        }
+    }
 }
 
 void PublicAPI::run() {
@@ -89,22 +116,21 @@ void PublicAPI::run() {
             }
             else {
                 auto* conn = conns_[incfd].get();
-                to_read_.push(incfd);
+                /*
+                    There is a queue here because in the future we would
+                    like to process messages on multiple threads and the
+                    management is easier with a queue. There may be changes
+                    in the future
+                */
+                incomings_.push(incfd);
             }
         }
 
-        while (!to_read_.empty()) {
-            auto topfd = to_read_.front();
-            to_read_.pop();
+        while (!incomings_.empty()) {
+            auto topfd = incomings_.front();
+            incomings_.pop();
 
             handle_read_sck(topfd);
-        }
-
-        while (!to_write_.empty()) {
-            auto topfd = to_write_.front();
-            to_write_.pop();
-
-            handle_write_sck(topfd);
         }
     }
 }
