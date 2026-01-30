@@ -9,8 +9,7 @@
 
 constexpr size_t MESSAGE_QUEUE_SIZE = 100'000;
 constexpr size_t MAX_MESSAGE_LEN = 4096;
-// max amount of bytes handled per handle_read_sck call
-constexpr int MAX_BYTES_PER_HANDLE = 100'000;  // TODO: implement the usage
+constexpr int MAX_BYTES_PER_HANDLE = 100'000;
 constexpr int MAX_EVENTS = 100;
 
 struct Conn {

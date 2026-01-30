@@ -62,7 +62,7 @@ void PublicAPI::handle_read_sck(int fd) {
     auto totalRead = 0u;
     auto received = 0u;
 
-    while (true) {
+    while (totalRead < MAX_BYTES_PER_HANDLE) {
         auto n = ::read(fd, buf.data() + totalRead, 4);
         // TODO: error handling, break out of the loop here at some point
         received += n;
@@ -71,7 +71,7 @@ void PublicAPI::handle_read_sck(int fd) {
         const uint32_t mesLen = std::bit_cast<uint32_t>(std::array<std::byte, 4>{buf[0], buf[1], buf[2], buf[3]});
         // TODO: meslen checks (> 0 and < maxlen)
 
-        while (mesLen < received) {
+        while (totalRead < MAX_BYTES_PER_HANDLE && mesLen < received) {
             n = ::read(fd, buf.data() + totalRead, MAX_MESSAGE_LEN);
             // TODO: error handling
             received += n;
