@@ -6,7 +6,6 @@
 #include <array>
 #include <cerrno>
 #include <iostream>
-#include "SPSCQueue.h"
 
 int PublicAPI::open_sck() {
     int fd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
