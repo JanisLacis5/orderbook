@@ -50,9 +50,9 @@ private:
     std::queue<int> incomings_;
 
     int open_sck();
-    void bind_sck(int fd, int port = 8000, in_addr_t ipaddr = INADDR_ANY);
-    void epoll_add(int fd);
-    int accept_sck();
+    API_STATUS_CODE bind_sck(int fd, int port = 8000, in_addr_t ipaddr = INADDR_ANY);
+    API_STATUS_CODE epoll_add(int fd);
+    API_STATUS_CODE accept_sck();
     API_STATUS_CODE handle_read_sck(int fd);
-    void handle_write_sck(int fd);
+    API_STATUS_CODE handle_write_sck(int fd);
 };

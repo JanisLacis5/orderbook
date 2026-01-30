@@ -9,35 +9,49 @@
 
 int PublicAPI::open_sck() {
     int fd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
-    if (fd == -1)
-        throw std::system_error(errno, std::system_category(), "socket");
+    if (fd == -1) {
+        perror("[open_sck]: socket");
+        return -1;
+    }
 
     int so_reuseaddr_val = 1;
-    if (::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr_val, sizeof(so_reuseaddr_val)) == -1)
-        throw std::system_error(errno, std::system_category(), "setsockopt");
+    if (::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr_val, sizeof(so_reuseaddr_val)) == -1) {
+        perror("[open_sck]: setsockopt");
+        return -1;
+    }
 
     return fd;
 }
 
-void PublicAPI::bind_sck(int fd, int port, in_addr_t ipaddr) {
+API_STATUS_CODE PublicAPI::bind_sck(int fd, int port, in_addr_t ipaddr) {
     sockaddr_in addr{.sin_family = AF_INET, .sin_port = htons(port), .sin_addr = {.s_addr = ipaddr}};
-    if (::bind(fd, (sockaddr*)&addr, sizeof(addr)) == -1)
-        throw std::system_error(errno, std::system_category(), "bind");
+    
+    if (::bind(fd, (sockaddr*)&addr, sizeof(addr)) == -1) {
+        perror("[bind_sck]: bind");
+        return API_STATUS_CODE::SYSTEM_ERROR;
+    }
+
+    return API_STATUS_CODE::SUCCESS;
 }
 
-void PublicAPI::epoll_add(int fd) {
+API_STATUS_CODE PublicAPI::epoll_add(int fd) {
     epoll_event ev{.events = EPOLLIN, .data = {.fd = fd}};
-    if (::epoll_ctl(epollfd_, EPOLL_CTL_ADD, fd, &ev) == -1)
-        throw std::system_error(errno, std::system_category(), "epoll_ctl");
+    if (::epoll_ctl(epollfd_, EPOLL_CTL_ADD, fd, &ev) == -1) {
+        perror("[epoll_add]: epoll_ctl");
+        return API_STATUS_CODE::SYSTEM_ERROR;
+    }
+
+    return API_STATUS_CODE::SUCCESS;
 }
 
-int PublicAPI::accept_sck() {
+API_STATUS_CODE PublicAPI::accept_sck() {
     sockaddr_in local{};
     socklen_t addrlen = sizeof(local);
+
     int connFd = ::accept(serverSockFd_, (sockaddr*)&local, &addrlen);
     if (connFd == -1) {
-        perror("accept");
-        return -1;
+        perror("[accept_sck]: accept");
+        return API_STATUS_CODE::SYSTEM_ERROR;
     }
 
     // Make non-blocking
@@ -46,14 +60,14 @@ int PublicAPI::accept_sck() {
     uint32_t events = EPOLLIN | EPOLLET;
     epoll_event ev{.events = events, .data = {.fd = connFd}};
     if (::epoll_ctl(epollfd_, EPOLL_CTL_ADD, connFd, &ev) == -1) {
-        perror("epoll_ctl: conn_sock");
-        return -1;
+        perror("[accept_sck]: epoll_ctl");
+        return API_STATUS_CODE::SYSTEM_ERROR;
     }
 
     // TODO: generate userId and add it to the conn->holderId
     // TODO: create a new spsc queue in messageQueues map for the new user
     conns_[connFd] = std::make_unique<Conn>();
-    return 0;
+    return API_STATUS_CODE::SUCCESS;
 }
 
 API_STATUS_CODE PublicAPI::handle_read_sck(int fd) {
@@ -71,7 +85,7 @@ API_STATUS_CODE PublicAPI::handle_read_sck(int fd) {
             if (errno == EAGAIN || errno == EWOULDBLOCK)
                 return API_STATUS_CODE::SUCCESS;
 
-            perror("handle_read_sck");
+            perror("[handle_read_sck]: read1");
             return API_STATUS_CODE::SYSTEM_ERROR;
         }
 
@@ -79,15 +93,17 @@ API_STATUS_CODE PublicAPI::handle_read_sck(int fd) {
         totalRead += n;
 
         const int32_t mesLen = std::bit_cast<int32_t>(std::array<std::byte, 4>{buf[0], buf[1], buf[2], buf[3]});
-        if (mesLen <= 0 || mesLen > MAX_MESSAGE_LEN) {
+        if (mesLen <= 0 || mesLen > MAX_MESSAGE_LEN)
             return API_STATUS_CODE::BAD_MESSAGE_LEN;
-        }
 
         while (totalRead < MAX_BYTES_PER_HANDLE && mesLen < received) {
             n = ::read(fd, buf.data() + totalRead, MAX_MESSAGE_LEN);
             if (n == 0) break;
             if (n == -1) {
-                if (errno == EAGAIN || errno == EWOULDBLOCK) break;
+                if (errno == EAGAIN || errno == EWOULDBLOCK)
+                    break;
+
+                perror("[handle_read_sck]: read2");
                 return API_STATUS_CODE::SYSTEM_ERROR;
             }
 
@@ -108,6 +124,7 @@ API_STATUS_CODE PublicAPI::handle_read_sck(int fd) {
     return API_STATUS_CODE::SUCCESS;
 }
 
+// TODO: replace throws with responses to the sender
 void PublicAPI::run() {
     serverSockFd_ = open_sck();
     bind_sck(serverSockFd_);
