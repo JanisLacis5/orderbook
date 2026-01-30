@@ -7,7 +7,7 @@
 #include <bit>
 #include <cerrno>
 
-int PublicAPI::open_sck() {
+int PublicAPI::openSck() {
     int fd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
     if (fd == -1) {
         perror("[open_sck]: socket");
@@ -23,7 +23,7 @@ int PublicAPI::open_sck() {
     return fd;
 }
 
-API_STATUS_CODE PublicAPI::bind_sck(int fd, int port, in_addr_t ipaddr) {
+API_STATUS_CODE PublicAPI::bindSck(int fd, int port, in_addr_t ipaddr) {
     sockaddr_in addr{.sin_family = AF_INET, .sin_port = htons(port), .sin_addr = {.s_addr = ipaddr}};
     
     if (::bind(fd, (sockaddr*)&addr, sizeof(addr)) == -1) {
@@ -34,7 +34,7 @@ API_STATUS_CODE PublicAPI::bind_sck(int fd, int port, in_addr_t ipaddr) {
     return API_STATUS_CODE::SUCCESS;
 }
 
-API_STATUS_CODE PublicAPI::epoll_add(int fd) {
+API_STATUS_CODE PublicAPI::epollAdd(int fd) {
     epoll_event ev{.events = EPOLLIN, .data = {.fd = fd}};
     if (::epoll_ctl(epollfd_, EPOLL_CTL_ADD, fd, &ev) == -1) {
         perror("[epoll_add]: epoll_ctl");
@@ -44,7 +44,7 @@ API_STATUS_CODE PublicAPI::epoll_add(int fd) {
     return API_STATUS_CODE::SUCCESS;
 }
 
-API_STATUS_CODE PublicAPI::accept_sck() {
+API_STATUS_CODE PublicAPI::acceptSck() {
     sockaddr_in local{};
     socklen_t addrlen = sizeof(local);
 
@@ -70,7 +70,7 @@ API_STATUS_CODE PublicAPI::accept_sck() {
     return API_STATUS_CODE::SUCCESS;
 }
 
-API_STATUS_CODE PublicAPI::handle_read_sck(int fd) {
+API_STATUS_CODE PublicAPI::handleReadSck(int fd) {
     auto& conn = conns_.at(fd);
     auto& buf = conn->in;
     auto totalRead = 0u;
@@ -126,15 +126,15 @@ API_STATUS_CODE PublicAPI::handle_read_sck(int fd) {
 
 // TODO: replace throws with responses to the sender
 void PublicAPI::run() {
-    serverSockFd_ = open_sck();
-    bind_sck(serverSockFd_);
+    serverSockFd_ = openSck();
+    bindSck(serverSockFd_);
     if (::listen(serverSockFd_, SOMAXCONN) == -1)
         throw std::system_error(errno, std::system_category(), "listen");
 
     epollfd_ = ::epoll_create1(0);
     if (epollfd_ == -1)
         throw std::system_error(errno, std::system_category(), "epoll_create");
-    epoll_add(serverSockFd_);
+    epollAdd(serverSockFd_);
 
     std::array<epoll_event, MAX_EVENTS> events;
     while (true) {
@@ -148,7 +148,7 @@ void PublicAPI::run() {
         for (int i = 0; i < nfds; ++i) {
             int incfd = events[i].data.fd;
             if (incfd == serverSockFd_) {
-                accept_sck();
+                acceptSck();
             }
             else {
                 auto* conn = conns_[incfd].get();
@@ -166,7 +166,7 @@ void PublicAPI::run() {
             auto topfd = incomings_.front();
             incomings_.pop();
 
-            handle_read_sck(topfd);
+            handleReadSck(topfd);
         }
     }
 }

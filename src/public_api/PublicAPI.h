@@ -49,10 +49,11 @@ private:
     // TODO: make these thread safe and process messages on multiple threads
     std::queue<int> incomings_;
 
-    int open_sck();
-    API_STATUS_CODE bind_sck(int fd, int port = 8000, in_addr_t ipaddr = INADDR_ANY);
-    API_STATUS_CODE epoll_add(int fd);
-    API_STATUS_CODE accept_sck();
-    API_STATUS_CODE handle_read_sck(int fd);
-    API_STATUS_CODE handle_write_sck(int fd);
+    int openSck();
+    uint64_t generateUserId();
+    API_STATUS_CODE bindSck(int fd, int port = 8000, in_addr_t ipaddr = INADDR_ANY);
+    API_STATUS_CODE epollAdd(int fd);
+    API_STATUS_CODE acceptSck();
+    API_STATUS_CODE handleReadSck(int fd);
+    API_STATUS_CODE handleWriteSck(int fd);
 };
