@@ -88,7 +88,7 @@ All messages use a **binary framed format**:
 
 | Field       | Size     | Description                  |
 | ----------- | -------- | ---------------------------- |
-| `total_len` | 4 bytes  | Total message length         |
+| `total_len` | 4 bytes  | Total message length (without the total_len variable)         |
 | `callID`    | 4 bytes  | Specific operation           |
 | `params`    | variable | Key-value encoded parameters |
 
