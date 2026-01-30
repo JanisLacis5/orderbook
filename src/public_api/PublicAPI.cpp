@@ -56,7 +56,7 @@ int PublicAPI::accept_sck() {
     return 0;
 }
 
-void PublicAPI::handle_read_sck(int fd) {
+API_STATUS_CODE PublicAPI::handle_read_sck(int fd) {
     auto& conn = conns_.at(fd);
     auto& buf = conn->in;
     auto totalRead = 0u;
@@ -64,16 +64,33 @@ void PublicAPI::handle_read_sck(int fd) {
 
     while (totalRead < MAX_BYTES_PER_HANDLE) {
         auto n = ::read(fd, buf.data() + totalRead, 4);
-        // TODO: error handling, break out of the loop here at some point
+
+        if (n == 0)
+            return API_STATUS_CODE::SUCCESS;
+        if (n == -1) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                return API_STATUS_CODE::SUCCESS;
+
+            perror("handle_read_sck");
+            return API_STATUS_CODE::SYSTEM_ERROR;
+        }
+
         received += n;
         totalRead += n;
 
-        const uint32_t mesLen = std::bit_cast<uint32_t>(std::array<std::byte, 4>{buf[0], buf[1], buf[2], buf[3]});
-        // TODO: meslen checks (> 0 and < maxlen)
+        const int32_t mesLen = std::bit_cast<int32_t>(std::array<std::byte, 4>{buf[0], buf[1], buf[2], buf[3]});
+        if (mesLen <= 0 || mesLen > MAX_MESSAGE_LEN) {
+            return API_STATUS_CODE::BAD_MESSAGE_LEN;
+        }
 
         while (totalRead < MAX_BYTES_PER_HANDLE && mesLen < received) {
             n = ::read(fd, buf.data() + totalRead, MAX_MESSAGE_LEN);
-            // TODO: error handling
+            if (n == 0) break;
+            if (n == -1) {
+                if (errno == EAGAIN || errno == EWOULDBLOCK) break;
+                return API_STATUS_CODE::SYSTEM_ERROR;
+            }
+
             received += n;
             totalRead += n;
         }
@@ -87,6 +104,8 @@ void PublicAPI::handle_read_sck(int fd) {
             received -= mesLen;
         }
     }
+
+    return API_STATUS_CODE::SUCCESS;
 }
 
 void PublicAPI::run() {

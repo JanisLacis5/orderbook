@@ -12,6 +12,12 @@ constexpr size_t MAX_MESSAGE_LEN = 4096;
 constexpr int MAX_BYTES_PER_HANDLE = 100'000;
 constexpr int MAX_EVENTS = 100;
 
+enum class API_STATUS_CODE {
+    SUCCESS,
+    BAD_MESSAGE_LEN,
+    SYSTEM_ERROR
+};
+
 struct Conn {
     userId_t holderId;
     
@@ -47,6 +53,6 @@ private:
     void bind_sck(int fd, int port = 8000, in_addr_t ipaddr = INADDR_ANY);
     void epoll_add(int fd);
     int accept_sck();
-    void handle_read_sck(int fd);
+    API_STATUS_CODE handle_read_sck(int fd);
     void handle_write_sck(int fd);
 };
