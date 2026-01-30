@@ -1,29 +1,25 @@
 #pragma once
 
 #include <netinet/in.h>
+#include <array>
 #include <map>
 #include <queue>
-#include <array>
-#include "usings.h"
 #include "SPSCQueue.h"
+#include "usings.h"
 
 constexpr size_t MESSAGE_QUEUE_SIZE = 100'000;
 constexpr size_t MAX_MESSAGE_LEN = 4096;
 constexpr int MAX_BYTES_PER_HANDLE = 100'000;
 constexpr int MAX_EVENTS = 100;
 
-enum class API_STATUS_CODE {
-    SUCCESS,
-    BAD_MESSAGE_LEN,
-    SYSTEM_ERROR
-};
+enum class API_STATUS_CODE { SUCCESS, BAD_MESSAGE_LEN, SYSTEM_ERROR };
 
 struct Conn {
     userId_t holderId;
-    
+
     // buffers that hold excess data from a partial read e.g. unfinished message
     // always starts with total_mes_len
-    std::array<std::byte, MAX_MESSAGE_LEN> in;  // from conn
+    std::array<std::byte, MAX_MESSAGE_LEN> in;   // from conn
     std::array<std::byte, MAX_MESSAGE_LEN> out;  // to conn
 };
 

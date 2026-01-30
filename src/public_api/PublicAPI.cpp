@@ -25,7 +25,7 @@ int PublicAPI::openSck() {
 
 API_STATUS_CODE PublicAPI::bindSck(int fd, int port, in_addr_t ipaddr) {
     sockaddr_in addr{.sin_family = AF_INET, .sin_port = htons(port), .sin_addr = {.s_addr = ipaddr}};
-    
+
     if (::bind(fd, (sockaddr*)&addr, sizeof(addr)) == -1) {
         perror("[bind_sck]: bind");
         return API_STATUS_CODE::SYSTEM_ERROR;
@@ -98,7 +98,8 @@ API_STATUS_CODE PublicAPI::handleReadSck(int fd) {
 
         while (totalRead < MAX_BYTES_PER_HANDLE && mesLen < received) {
             n = ::read(fd, buf.data() + totalRead, MAX_MESSAGE_LEN);
-            if (n == 0) break;
+            if (n == 0)
+                break;
             if (n == -1) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK)
                     break;
