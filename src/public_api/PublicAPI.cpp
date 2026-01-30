@@ -6,6 +6,7 @@
 #include <array>
 #include <bit>
 #include <cerrno>
+#include <random>
 
 int PublicAPI::openSck() {
     int fd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
@@ -21,6 +22,27 @@ int PublicAPI::openSck() {
     }
 
     return fd;
+}
+
+userId_t PublicAPI::generateUserId() {
+    auto now = std::chrono::system_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+
+    // 42 bits for timestamp, 22 bits for random
+    std::random_device rd;
+    std::mt19937_64 gen(rd());
+    std::uniform_int_distribution<uint64_t> dist(0, (1ull << 22) - 1);
+
+    uint64_t timestamp = static_cast<uint64_t>(ms) & 0x3ffffffffff;  // 42 bits
+    uint64_t random = dist(gen);
+
+    userId_t id = (timestamp << 22) | random;
+
+    if (userIds_.find(id) != userIds_.end())
+        return generateUserId();
+
+    userIds_.insert(id);
+    return id;
 }
 
 API_STATUS_CODE PublicAPI::bindSck(int fd, int port, in_addr_t ipaddr) {

@@ -4,6 +4,7 @@
 #include <array>
 #include <map>
 #include <queue>
+#include <set>
 #include "SPSCQueue.h"
 #include "usings.h"
 
@@ -38,6 +39,7 @@ private:
 
     int serverSockFd_{-1};
     int epollfd_{-1};
+    std::set<userId_t> userIds_;  // necessary to detect for clashes
 
     std::map<userId_t, messageQueue_t> messageQueues_;
 
