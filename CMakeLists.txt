@@ -72,7 +72,7 @@ target_include_directories(publicAPI
     ${PROJECT_SOURCE_DIR}/src/public_api
 )
 target_link_libraries(publicAPI
-    PUBLIC data_structures
+    PUBLIC data_structures common
 )
 
 # Main
