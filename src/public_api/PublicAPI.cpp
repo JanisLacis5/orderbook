@@ -14,6 +14,9 @@
         - save send buffer in the conn->out
         - if there is an EWOULDBLCK or EAGAIN error, do not remove EPOLLOUT flag and process in another run
         - make this conceptually similar to the reading
+        - create function that populates conn->in buffer, sets inSize and inReceived integers, then another function
+            that actually empties this buffer
+        - create function that populates conn->out buffer, sendRes() already empties it
 */
 
 namespace {
@@ -168,66 +171,11 @@ API_STATUS_CODE PublicAPI::acceptSck() {
     return API_STATUS_CODE::SUCCESS;
 }
 
-API_STATUS_CODE PublicAPI::handleReadSck(int fd) {
-    auto& conn = conns_.at(fd);
-    auto& buf = conn->in;
-    auto totalRead = 0u;
-    auto received = 0u;
-
-    while (totalRead < MAX_BYTES_PER_HANDLE) {
-        auto n = ::read(fd, buf.data() + totalRead, 4);
-
-        if (n == 0)
-            return API_STATUS_CODE::SUCCESS;
-        if (n == -1) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                return API_STATUS_CODE::SUCCESS;
-
-            perror("[handle_read_sck]: read1");
-            return API_STATUS_CODE::SYSTEM_ERROR;
-        }
-
-        received += n;
-        totalRead += n;
-
-        const int32_t mesLen = std::bit_cast<int32_t>(std::array<std::byte, 4>{buf[0], buf[1], buf[2], buf[3]});
-        if (mesLen <= 0 || mesLen > MAX_MESSAGE_LEN)
-            return API_STATUS_CODE::BAD_MESSAGE_LEN;
-
-        while (totalRead < MAX_BYTES_PER_HANDLE && mesLen < received) {
-            n = ::read(fd, buf.data() + totalRead, MAX_MESSAGE_LEN);
-            if (n == 0)
-                break;
-            if (n == -1) {
-                if (errno == EAGAIN || errno == EWOULDBLOCK)
-                    break;
-
-                perror("[handle_read_sck]: read2");
-                return API_STATUS_CODE::SYSTEM_ERROR;
-            }
-
-            received += n;
-            totalRead += n;
-        }
-
-        if (mesLen <= received) {
-            auto& queue = messageQueues_[conn->holderId];
-            std::array<std::byte, MAX_MESSAGE_LEN> message;
-
-            std::copy(buf.begin(), buf.begin() + mesLen, message.begin());
-            queue->push(buf);
-            received -= mesLen;
-        }
-    }
-
-    return API_STATUS_CODE::SUCCESS;
-}
-
 /*
     responses to write to the client must be prepared and set in the conn->out buffer
     TODO: implement function that prepares the message to send.
 */
-void PublicAPI::sendRes(int fd) {
+void PublicAPI::populateWrite(int fd) {
     auto& conn = conns_[fd];
     auto& buf = conn->out;
     auto& sent = conn->outSent;
@@ -258,6 +206,37 @@ void PublicAPI::sendRes(int fd) {
         conn->resetOut();
         unsetEpollWriteable(fd);
     }
+}
+
+API_STATUS_CODE PublicAPI::populateRead(int fd) {
+    auto& conn = conns_.at(fd);
+    auto& buf = conn->in;
+    auto& received = conn->inReceived;
+
+    while (received < MAX_BYTES_PER_HANDLE) {
+        auto n = ::read(fd, buf.data() + received, MAX_MESSAGE_LEN);
+        if (n == 0)
+            break;
+        if (n == -1) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                break;
+
+            perror("[handle_read_sck]: read2");
+            return API_STATUS_CODE::SYSTEM_ERROR;
+        }
+
+        received += n;
+    }
+
+    return API_STATUS_CODE::SUCCESS;
+}
+
+API_STATUS_CODE PublicAPI::handleInBuf(int fd) {
+    // TODO: function that takes conn->in buf and makes it into messages and adds them to a queue
+}
+
+API_STATUS_CODE PublicAPI::handleOutBuf(int fd) {
+    // TODO: function that takes conn->out buf and sends the contents to the client
 }
 
 // TODO: replace throws with responses to the sender
@@ -300,6 +279,7 @@ void PublicAPI::run() {
                     management is easier with a queue. There may be changes
                     in the future
                 */
+                populateRead(incfd);
                 incomings_.push(incfd);
             }
         }
@@ -308,14 +288,14 @@ void PublicAPI::run() {
             auto topfd = incomings_.front();
             incomings_.pop();
 
-            handleReadSck(topfd);
+            handleInBuf(topfd);
         }
 
         while (!outgoings_.empty()) {
             auto topfd = outgoings_.front();
             outgoings_.pop();
 
-            sendRes(topfd);
+            handleOutBuf(topfd);
         }
     }
 }
