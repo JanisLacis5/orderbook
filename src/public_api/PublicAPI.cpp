@@ -87,26 +87,28 @@ userId_t PublicAPI::generateUserId() {
     return id;
 }
 
-void PublicAPI::unsetEpollWriteable(int fd, epoll_event& event) {
-    if (!(event.events & EPOLLOUT))
+void PublicAPI::unsetEpollWriteable(int fd) {
+    auto& conn = conns_[fd];
+    if (!(conn->epollEvents & EPOLLOUT))
         return;
 
-    event.events &= ~EPOLLOUT;
-    if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &event) == -1) {
+    conn->epollEvents &= ~EPOLLOUT;
+    epoll_event ev{.events = conn->epollEvents, .data = {.fd = fd}};
+
+    if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev) == -1)
         perror("[sendRes]: epoll_ctl1");
-        return;
-    }
 }
 
-void PublicAPI::setEpollWriteable(int fd, epoll_event& event) {
-    if (event.events & EPOLLOUT)
+void PublicAPI::setEpollWriteable(int fd) {
+    auto& conn = conns_[fd];
+    if (conn->epollEvents & EPOLLOUT)
         return;
 
-    event.events |= EPOLLOUT;
-    if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &event) == -1) {
+    conn->epollEvents |= EPOLLOUT;
+    epoll_event ev{.events = conn->epollEvents, .data = {.fd = fd}};
+
+    if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev) == -1)
         perror("[sendRes]: epoll_ctl1");
-        return;
-    }
 }
 
 API_STATUS_CODE PublicAPI::bindSck(int fd, int port, in_addr_t ipaddr) {
@@ -120,6 +122,7 @@ API_STATUS_CODE PublicAPI::bindSck(int fd, int port, in_addr_t ipaddr) {
     return API_STATUS_CODE::SUCCESS;
 }
 
+// TODO: bad function
 API_STATUS_CODE PublicAPI::epollAdd(int fd) {
     epoll_event ev{.events = EPOLLIN, .data = {.fd = fd}};
     if (::epoll_ctl(epollfd_, EPOLL_CTL_ADD, fd, &ev) == -1) {
@@ -130,12 +133,13 @@ API_STATUS_CODE PublicAPI::epollAdd(int fd) {
     return API_STATUS_CODE::SUCCESS;
 }
 
-void PublicAPI::connInit(int fd) {
+void PublicAPI::connInit(int fd, uint32_t events) {
     auto conn = std::make_unique<Conn>();
     auto userId = generateUserId();
 
     conn->fd = fd;
     conn->holderId = userId;
+    conn->epollEvents = events;
     uid2fd_[userId] = fd;
     messageQueues_[userId] = std::make_unique<MessageQueue_t>(MESSAGE_QUEUE_SIZE);
 }
@@ -160,7 +164,7 @@ API_STATUS_CODE PublicAPI::acceptSck() {
         return API_STATUS_CODE::SYSTEM_ERROR;
     }
 
-    connInit(connFd);
+    connInit(connFd, events);
     return API_STATUS_CODE::SUCCESS;
 }
 
@@ -223,7 +227,7 @@ API_STATUS_CODE PublicAPI::handleReadSck(int fd) {
     responses to write to the client must be prepared and set in the conn->out buffer
     TODO: implement function that prepares the message to send.
 */
-void PublicAPI::sendRes(int fd, epoll_event& event) {
+void PublicAPI::sendRes(int fd) {
     auto& conn = conns_[fd];
     auto& buf = conn->out;
     auto& sent = conn->outSent;
@@ -232,7 +236,7 @@ void PublicAPI::sendRes(int fd, epoll_event& event) {
     auto toSend = [bufSize, sent] { return bufSize - sent; };
     auto bufPtr = [&buf, sent] { return buf.data() + sent; };
 
-    setEpollWriteable(fd, event);
+    setEpollWriteable(fd);
     auto n = ::send(fd, bufPtr(), toSend(), 0);
     if (n <= 0) {
         perror("[sendRes]: send1");
@@ -252,7 +256,7 @@ void PublicAPI::sendRes(int fd, epoll_event& event) {
 
     if (toSend() == 0) {
         conn->resetOut();
-        unsetEpollWriteable(fd, event);
+        unsetEpollWriteable(fd);
     }
 }
 
@@ -285,7 +289,7 @@ void PublicAPI::run() {
                 API_STATUS_CODE status = acceptSck();
                 if (status != API_STATUS_CODE::SUCCESS) {
                     // TODO: prepare the message to actually send
-                    sendRes(incfd, event);
+                    outgoings_.push(incfd);
                 }
             }
             else {
@@ -311,7 +315,6 @@ void PublicAPI::run() {
             auto topfd = outgoings_.front();
             outgoings_.pop();
 
-            // TODO: figure out a way to get epoll events here for the argument
             sendRes(topfd);
         }
     }

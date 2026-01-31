@@ -21,6 +21,7 @@ enum class API_STATUS_CODE { SUCCESS, BAD_MESSAGE_LEN, SYSTEM_ERROR };
 struct Conn {
     int fd;
     userId_t holderId;
+    uint32_t epollEvents;
 
     size_t outSize;
     size_t outSent;
@@ -71,11 +72,11 @@ private:
     std::map<userId_t, std::unique_ptr<MessageQueue_t>> messageQueues_;
 
     int openSck();
-    void connInit(int fd);
-    void sendRes(int fd, epoll_event& event);
+    void connInit(int fd, uint32_t events);
+    void sendRes(int fd);
     uint64_t generateUserId();
-    void setEpollWriteable(int fd, epoll_event& event);
-    void unsetEpollWriteable(int fd, epoll_event& event);
+    void setEpollWriteable(int fd);
+    void unsetEpollWriteable(int fd);
 
     API_STATUS_CODE bindSck(int fd, int port = 8000, in_addr_t ipaddr = INADDR_ANY);
     API_STATUS_CODE epollAdd(int fd);
