@@ -1,6 +1,7 @@
 #pragma once
 
 #include <netinet/in.h>
+#include <sys/epoll.h>
 #include <array>
 #include <map>
 #include <queue>
@@ -21,10 +22,20 @@ struct Conn {
     int fd;
     userId_t holderId;
 
+    size_t outSize;
+    size_t outSent;
+    size_t inSize;
+    size_t inSent;
+
     // buffers that hold excess data from a partial read e.g. unfinished message
     // always starts with total_mes_len
     std::array<std::byte, MAX_MESSAGE_LEN> in;   // from conn
     std::array<std::byte, MAX_MESSAGE_LEN> out;  // to conn
+
+    void resetOut() {
+        outSize = 0;
+        outSent = 0;
+    }
 };
 
 struct APIResponse {
@@ -55,13 +66,17 @@ private:
     std::map<int, std::unique_ptr<Conn>> conns_;
     // TODO: make this thread safe and process messages on multiple threads
     std::queue<int> incomings_;
+    std::queue<int> outgoings_;
 
     std::map<userId_t, std::unique_ptr<MessageQueue_t>> messageQueues_;
 
     int openSck();
     void connInit(int fd);
-    void sendRes(int fd, API_STATUS_CODE status, std::span<std::byte> data);
+    void sendRes(int fd, epoll_event& event);
     uint64_t generateUserId();
+    void setEpollWriteable(int fd, epoll_event& event);
+    void unsetEpollWriteable(int fd, epoll_event& event);
+
     API_STATUS_CODE bindSck(int fd, int port = 8000, in_addr_t ipaddr = INADDR_ANY);
     API_STATUS_CODE epollAdd(int fd);
     API_STATUS_CODE acceptSck();

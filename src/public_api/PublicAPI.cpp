@@ -6,15 +6,50 @@
 #include <array>
 #include <bit>
 #include <cerrno>
-#include <random>
 #include <cstring>
+#include <random>
 
 /*
     TODO:
         - save send buffer in the conn->out
         - if there is an EWOULDBLCK or EAGAIN error, do not remove EPOLLOUT flag and process in another run
-        - make this conceptually similar to the reading 
+        - make this conceptually similar to the reading
 */
+
+namespace {
+
+    std::array<std::byte, MAX_RESPONSE_LEN> createResBuf(API_STATUS_CODE status, std::span<std::byte> data) {
+        APIResponse hdr;
+        hdr.payloadSize = data.size();
+        switch (status) {
+            case API_STATUS_CODE::SUCCESS:
+                hdr.message = "Message processed successfuly";
+                hdr.code = 200;
+                break;
+            case API_STATUS_CODE::SYSTEM_ERROR:
+                hdr.message = "Internal error";
+                hdr.code = 500;
+                break;
+            case API_STATUS_CODE::BAD_MESSAGE_LEN:
+                hdr.message = "Invalid message length";
+                hdr.code = 400;
+                break;
+        }
+        assert(hdr.message.size() <= MAX_HDR_MESSAGE_SIZE);
+        hdr.message.resize(HDR_MESSAGE_SIZE, '\0');
+
+        uint32_t codeNetEnd = htonl(hdr.code);
+        auto codeBytes = std::bit_cast<std::array<std::byte, 4>>(codeNetEnd);
+
+        std::array<std::byte, MAX_RESPONSE_LEN> buf;
+        std::copy(codeBytes.begin(), codeBytes.end(), buf.begin());
+        std::memcpy(buf.data() + 4, hdr.message.data(), HDR_MESSAGE_SIZE);
+        std::copy(data.begin(), data.begin() + data.size(), buf.begin() + HDR_SIZE);
+
+        return buf;
+    }
+
+}  // namespace
 
 int PublicAPI::openSck() {
     int fd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
@@ -50,6 +85,28 @@ userId_t PublicAPI::generateUserId() {
         return generateUserId();
 
     return id;
+}
+
+void PublicAPI::unsetEpollWriteable(int fd, epoll_event& event) {
+    if (!(event.events & EPOLLOUT))
+        return;
+
+    event.events &= ~EPOLLOUT;
+    if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &event) == -1) {
+        perror("[sendRes]: epoll_ctl1");
+        return;
+    }
+}
+
+void PublicAPI::setEpollWriteable(int fd, epoll_event& event) {
+    if (event.events & EPOLLOUT)
+        return;
+
+    event.events |= EPOLLOUT;
+    if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &event) == -1) {
+        perror("[sendRes]: epoll_ctl1");
+        return;
+    }
 }
 
 API_STATUS_CODE PublicAPI::bindSck(int fd, int port, in_addr_t ipaddr) {
@@ -96,7 +153,7 @@ API_STATUS_CODE PublicAPI::acceptSck() {
     // Make non-blocking
     ::fcntl(connFd, F_SETFL, ::fcntl(connFd, F_GETFL, 0) | O_NONBLOCK);
 
-    uint32_t events = EPOLLIN | EPOLLET;
+    uint32_t events = EPOLLIN;
     epoll_event ev{.events = events, .data = {.fd = connFd}};
     if (::epoll_ctl(epollfd_, EPOLL_CTL_ADD, connFd, &ev) == -1) {
         perror("[accept_sck]: epoll_ctl");
@@ -162,66 +219,40 @@ API_STATUS_CODE PublicAPI::handleReadSck(int fd) {
     return API_STATUS_CODE::SUCCESS;
 }
 
-void PublicAPI::sendRes(int fd, API_STATUS_CODE status, std::span<std::byte> data) {
-    APIResponse hdr;
-    switch (status) {
-        case API_STATUS_CODE::SUCCESS:
-            hdr.message = "Message processed successfuly";
-            hdr.code = 200;
-            break;
-        case API_STATUS_CODE::SYSTEM_ERROR:
-            hdr.message = "Internal error";
-            hdr.code = 500;
-            break;
-        case API_STATUS_CODE::BAD_MESSAGE_LEN:
-            hdr.message = "Invalid message length";
-            hdr.code = 400;
-            break;
-    }
-    assert(hdr.message.size() <= MAX_HDR_MESSAGE_SIZE);
-    hdr.message.resize(HDR_MESSAGE_SIZE, '\0');
+/*
+    responses to write to the client must be prepared and set in the conn->out buffer
+    TODO: implement function that prepares the message to send.
+*/
+void PublicAPI::sendRes(int fd, epoll_event& event) {
+    auto& conn = conns_[fd];
+    auto& buf = conn->out;
+    auto& sent = conn->outSent;
+    auto bufSize = conn->outSize;
 
-    auto totalBufSize = data.size() + HDR_SIZE;
-    std::array<std::byte, MAX_RESPONSE_LEN> buf;
+    auto toSend = [bufSize, sent] { return bufSize - sent; };
+    auto bufPtr = [&buf, sent] { return buf.data() + sent; };
 
-    uint32_t code = htonl(hdr.code);
-    auto codeBytes = std::bit_cast<std::array<std::byte, 4>>(code);
-
-    std::copy(codeBytes.begin(), codeBytes.end(), buf.begin());
-    std::memcpy(buf.data() + 4, hdr.message.data(), HDR_MESSAGE_SIZE);
-    std::copy(data.begin(), data.begin() + data.size(), buf.begin() + HDR_SIZE);
-
-    uint32_t events = EPOLLOUT | EPOLLET;
-    epoll_event ev{.events = events, .data = {.fd = fd}};
-    if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev) == -1) {
-        perror("[sendRes]: epoll_ctl1");
-        return;
-    }
-
-    auto sent = 0u;
-    auto n = ::send(fd, buf.data(), totalBufSize, 0);
-    if (n == 0) {
+    setEpollWriteable(fd, event);
+    auto n = ::send(fd, bufPtr(), toSend(), 0);
+    if (n <= 0) {
         perror("[sendRes]: send1");
         return;
-    } 
+    }
     sent += n;
 
-    while (sent < totalBufSize && n > 0) {
-        n = ::send(fd, buf.data() + sent, totalBufSize - sent, 0);
+    while (toSend() > 0 && n > 0) {
+        n = ::send(fd, bufPtr(), toSend(), 0);
         if (n < 0) {
             perror("[sendRes]: send2");
             return;
-        } 
+        }
 
         sent += n;
     }
-    hdr.payloadSize = data.size();
 
-    events = EPOLLIN | EPOLLET;
-    ev = {.events = events, .data = {.fd = fd}};
-    if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev) == -1) {
-        perror("[sendRes]: epoll_ctl2");
-        return;
+    if (toSend() == 0) {
+        conn->resetOut();
+        unsetEpollWriteable(fd, event);
     }
 }
 
@@ -247,11 +278,14 @@ void PublicAPI::run() {
         }
 
         for (int i = 0; i < nfds; ++i) {
-            int incfd = events[i].data.fd;
+            auto event = events[i];
+            int incfd = event.data.fd;
+
             if (incfd == serverSockFd_) {
                 API_STATUS_CODE status = acceptSck();
                 if (status != API_STATUS_CODE::SUCCESS) {
-                    sendRes(incfd, status);
+                    // TODO: prepare the message to actually send
+                    sendRes(incfd, event);
                 }
             }
             else {
@@ -271,6 +305,14 @@ void PublicAPI::run() {
             incomings_.pop();
 
             handleReadSck(topfd);
+        }
+
+        while (!outgoings_.empty()) {
+            auto topfd = outgoings_.front();
+            outgoings_.pop();
+
+            // TODO: figure out a way to get epoll events here for the argument
+            sendRes(topfd);
         }
     }
 }
