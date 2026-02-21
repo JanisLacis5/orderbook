@@ -73,12 +73,10 @@ private:
 
     int openSck();
     void connInit(int fd, uint32_t events);
-    void populateWrite(int fd);
     uint64_t generateUserId();
     void setEpollWriteable(int fd);
     void unsetEpollWriteable(int fd);
 
-    API_STATUS_CODE populateRead(int fd);
     API_STATUS_CODE bindSck(int fd, int port = 8000, in_addr_t ipaddr = INADDR_ANY);
     API_STATUS_CODE epollAdd(int fd);
     API_STATUS_CODE acceptSck();

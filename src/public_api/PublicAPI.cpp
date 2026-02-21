@@ -11,16 +11,11 @@
 
 /*
     TODO:
-        - save send buffer in the conn->out
-        - if there is an EWOULDBLCK or EAGAIN error, do not remove EPOLLOUT flag and process in another run
-        - make this conceptually similar to the reading
-        - create function that populates conn->in buffer, sets inSize and inReceived integers, then another function
-            that actually empties this buffer
-        - create function that populates conn->out buffer, sendRes() already empties it
+        - create function that populates conn->in buffer, sets inSize and inReceived integers
+        - create function that populates conn->out buffer
 */
 
 namespace {
-
     std::array<std::byte, MAX_RESPONSE_LEN> createResBuf(API_STATUS_CODE status, std::span<std::byte> data) {
         APIResponse hdr;
         hdr.payloadSize = data.size();
@@ -51,7 +46,6 @@ namespace {
 
         return buf;
     }
-
 }  // namespace
 
 int PublicAPI::openSck() {
@@ -125,7 +119,6 @@ API_STATUS_CODE PublicAPI::bindSck(int fd, int port, in_addr_t ipaddr) {
     return API_STATUS_CODE::SUCCESS;
 }
 
-// TODO: bad function
 API_STATUS_CODE PublicAPI::epollAdd(int fd) {
     epoll_event ev{.events = EPOLLIN, .data = {.fd = fd}};
     if (::epoll_ctl(epollfd_, EPOLL_CTL_ADD, fd, &ev) == -1) {
@@ -160,64 +153,24 @@ API_STATUS_CODE PublicAPI::acceptSck() {
     // Make non-blocking
     ::fcntl(connFd, F_SETFL, ::fcntl(connFd, F_GETFL, 0) | O_NONBLOCK);
 
-    uint32_t events = EPOLLIN;
-    epoll_event ev{.events = events, .data = {.fd = connFd}};
-    if (::epoll_ctl(epollfd_, EPOLL_CTL_ADD, connFd, &ev) == -1) {
-        perror("[accept_sck]: epoll_ctl");
-        return API_STATUS_CODE::SYSTEM_ERROR;
-    }
+    epollAdd(connFd);
 
-    connInit(connFd, events);
+    connInit(connFd, EPOLLIN);
     return API_STATUS_CODE::SUCCESS;
 }
 
-/*
-    responses to write to the client must be prepared and set in the conn->out buffer
-    TODO: implement function that prepares the message to send.
-*/
-void PublicAPI::populateWrite(int fd) {
-    auto& conn = conns_[fd];
-    auto& buf = conn->out;
-    auto& sent = conn->outSent;
-    auto bufSize = conn->outSize;
-
-    auto toSend = [bufSize, sent] { return bufSize - sent; };
-    auto bufPtr = [&buf, sent] { return buf.data() + sent; };
-
-    setEpollWriteable(fd);
-    auto n = ::send(fd, bufPtr(), toSend(), 0);
-    if (n <= 0) {
-        perror("[sendRes]: send1");
-        return;
-    }
-    sent += n;
-
-    while (toSend() > 0 && n > 0) {
-        n = ::send(fd, bufPtr(), toSend(), 0);
-        if (n < 0) {
-            perror("[sendRes]: send2");
-            return;
-        }
-
-        sent += n;
-    }
-
-    if (toSend() == 0) {
-        conn->resetOut();
-        unsetEpollWriteable(fd);
-    }
-}
-
-API_STATUS_CODE PublicAPI::populateRead(int fd) {
+API_STATUS_CODE PublicAPI::handleInBuf(int fd) {
     auto& conn = conns_.at(fd);
     auto& buf = conn->in;
     auto& received = conn->inReceived;
 
     while (received < MAX_BYTES_PER_HANDLE) {
         auto n = ::read(fd, buf.data() + received, MAX_MESSAGE_LEN);
+
         if (n == 0)
             break;
-        if (n == -1) {
+
+        if (n < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK)
                 break;
 
@@ -231,12 +184,46 @@ API_STATUS_CODE PublicAPI::populateRead(int fd) {
     return API_STATUS_CODE::SUCCESS;
 }
 
-API_STATUS_CODE PublicAPI::handleInBuf(int fd) {
-    // TODO: function that takes conn->in buf and makes it into messages and adds them to a queue
-}
-
 API_STATUS_CODE PublicAPI::handleOutBuf(int fd) {
-    // TODO: function that takes conn->out buf and sends the contents to the client
+    auto& conn = conns_[fd];
+    auto& buf = conn->out;
+    auto& sent = conn->outSent;
+    auto bufSize = conn->outSize;
+
+    auto toSend = [bufSize, sent] { return bufSize - sent; };
+    auto bufPtr = [&buf, sent] { return buf.data() + sent; };
+
+    setEpollWriteable(fd);
+    auto n = ::send(fd, bufPtr(), toSend(), 0);
+    if (n <= 0) {
+        perror("[sendRes]: send1");
+        return API_STATUS_CODE::SYSTEM_ERROR;
+    }
+    sent += n;
+
+    while (toSend() > 0 && n > 0) {
+        n = ::send(fd, bufPtr(), toSend(), 0);
+
+        if (n == 0)
+            break;
+
+        if (n < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                break;
+
+            perror("[sendRes]: send2");
+            return API_STATUS_CODE::SYSTEM_ERROR;
+        }
+
+        sent += n;
+    }
+
+    if (!toSend()) {
+        conn->resetOut();
+        unsetEpollWriteable(fd);
+    }
+
+    return API_STATUS_CODE::SUCCESS;
 }
 
 // TODO: replace throws with responses to the sender
@@ -267,21 +254,12 @@ void PublicAPI::run() {
             if (incfd == serverSockFd_) {
                 API_STATUS_CODE status = acceptSck();
                 if (status != API_STATUS_CODE::SUCCESS) {
-                    // TODO: prepare the message to actually send
+                    // TODO: prepare an error message to actually send
                     outgoings_.push(incfd);
                 }
             }
-            else {
-                auto* conn = conns_[incfd].get();
-                /*
-                    There is a queue here because in the future we would
-                    like to process messages on multiple threads and the
-                    management is easier with a queue. There may be changes
-                    in the future
-                */
-                populateRead(incfd);
+            else
                 incomings_.push(incfd);
-            }
         }
 
         while (!incomings_.empty()) {
