@@ -7,6 +7,10 @@ target_include_directories(net
     ${CMAKE_CURRENT_LIST_DIR}
 )
 
+target_link_libraries(net
+    PUBLIC logger
+)
+
 target_compile_options(net PRIVATE
   -Wall -Wextra -Wpedantic
 )

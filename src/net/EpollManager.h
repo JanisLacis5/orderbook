@@ -1,14 +1,19 @@
 #pragma once
 
 #include <sys/epoll.h>
+#include <unistd.h>
 #include <array>
+#include "Logger.h"
 
 constexpr int MAX_EVENTS = 100;
 
 class EpollManager {
 public:
     EpollManager();
-    ~EpollManager() {};
+    ~EpollManager() {
+        if (epollfd_ > 0)
+            ::close(epollfd_);
+    };
 
     bool add(int fd);
     int getEvents(std::array<epoll_event, MAX_EVENTS>& out);
@@ -17,4 +22,5 @@ public:
 
 private:
     int epollfd_;
+    Logger logger_{"EpollManager"};
 };

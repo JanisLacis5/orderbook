@@ -44,8 +44,8 @@ target_include_directories(data_structures
     ${PROJECT_SOURCE_DIR}/src/data_structures
 )
 
-# Networking
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/net)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/logger)
 
 # Common
 add_library(common INTERFACE)

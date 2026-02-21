@@ -58,5 +58,6 @@ bool EpollManager::unsetWriteable(int fd, uint32_t initialEvents) {
         perror("[sendRes]: epoll_ctl1");
         return false;
     }
+
     return true;
 }
