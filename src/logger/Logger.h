@@ -1,7 +1,6 @@
 #pragma once
 
 #include <compare>
-#include <string>
 #include <string_view>
 #include <utility>
 
@@ -9,7 +8,7 @@ enum class DebugLevel : int { ERROR = 0, WARN = 1, INFO = 2, DEBUG = 3 };
 
 class Logger {
 public:
-    Logger(std::string prefix, DebugLevel level = DebugLevel::ERROR) : prefix_{std::move(prefix)}, level_{level} {};
+    Logger(std::string_view prefix, DebugLevel level = DebugLevel::ERROR) : prefix_{std::move(prefix)}, level_{level} {};
     ~Logger() {};
 
     void error(std::string_view mes);
@@ -18,8 +17,8 @@ public:
     void debug(std::string_view mes);
 
 private:
-    std::string target_;  // TODO: default to stdout, but allow it to have a file path as well
-    std::string prefix_;
+    std::string_view target_;  // TODO: default to stdout, but allow it to have a file path as well
+    std::string_view prefix_;
     DebugLevel level_;
 };
 
