@@ -4,8 +4,10 @@
 
 EpollManager::EpollManager() {
     epollfd_ = ::epoll_create1(0);
-    if (epollfd_ == -1)
+    if (epollfd_ == -1) {
+        logger_.logerrno("failed to create epoll pool");
         throw std::system_error(errno, std::system_category(), "epoll_create");
+    }
 
     add(epollfd_);
 }
@@ -13,9 +15,13 @@ EpollManager::EpollManager() {
 int EpollManager::getEvents(std::array<epoll_event, MAX_EVENTS>& out) {
     int nfds = ::epoll_wait(epollfd_, out.data(), MAX_EVENTS, 0);
     if (nfds == -1) {
-        if (errno == EINTR)
+        if (errno == EINTR) {
+            logger_.info("got EINTR, skipping...");
             return 0;
-        throw std::system_error(errno, std::system_category(), "epoll_wait");
+        }
+
+        logger_.logerrno("failed to get epoll events");
+        return -1;
     }
 
     return nfds;
@@ -25,7 +31,7 @@ bool EpollManager::add(int fd) {
     epoll_event ev{.events = EPOLLIN, .data = {.fd = fd}};
 
     if (::epoll_ctl(epollfd_, EPOLL_CTL_ADD, fd, &ev) == -1) {
-        perror("[epoll_add]: epoll_ctl");
+        logger_.logerrno("failed to add to epoll pool");
         return false;
     }
 
@@ -40,7 +46,7 @@ bool EpollManager::setWriteable(int fd, uint32_t initialEvents) {
     epoll_event ev{.events = events, .data = {.fd = fd}};
 
     if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev) == -1) {
-        perror("[sendRes]: epoll_ctl1");
+        logger_.logerrno("failed to make socket writable");
         return false;
     }
 
@@ -55,7 +61,7 @@ bool EpollManager::unsetWriteable(int fd, uint32_t initialEvents) {
     epoll_event ev{.events = events, .data = {.fd = fd}};
 
     if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev) == -1) {
-        perror("[sendRes]: epoll_ctl1");
+        logger_.logerrno("failed to socket unwritable");
         return false;
     }
 
