@@ -1,10 +1,10 @@
 #pragma once
 
 #include <netinet/in.h>
-#include <sys/epoll.h>
 #include <array>
 #include <map>
 #include <queue>
+#include "EpollManager.h"
 #include "SPSCQueue.h"
 #include "usings.h"
 
@@ -14,7 +14,6 @@ constexpr size_t HDR_MESSAGE_SIZE = 32;
 constexpr size_t HDR_SIZE = HDR_MESSAGE_SIZE + 4;
 constexpr size_t MAX_RESPONSE_LEN = 1'000'000;
 constexpr int MAX_BYTES_PER_HANDLE = 100'000;
-constexpr int MAX_EVENTS = 100;
 
 enum class API_STATUS_CODE { SUCCESS, BAD_MESSAGE_LEN, SYSTEM_ERROR };
 
@@ -50,10 +49,7 @@ struct APIResponse {
 class PublicAPI {
 public:
     PublicAPI() {};
-    ~PublicAPI() {
-        ::close(serverSockFd_);
-        ::close(epollfd_);
-    }
+    ~PublicAPI() { ::close(serverSockFd_); }
 
     void run();
 
@@ -61,7 +57,7 @@ private:
     using MessageQueue_t = SPSCQueue<std::array<std::byte, MAX_MESSAGE_LEN>>;
 
     int serverSockFd_{-1};
-    int epollfd_{-1};
+    EpollManager epollManager_{};
 
     std::map<userId_t, int> uid2fd_;
     std::map<int, std::unique_ptr<Conn>> conns_;
@@ -74,11 +70,8 @@ private:
     int openSck();
     void connInit(int fd, uint32_t events);
     uint64_t generateUserId();
-    void setEpollWriteable(int fd);
-    void unsetEpollWriteable(int fd);
 
     API_STATUS_CODE bindSck(int fd, int port = 8000, in_addr_t ipaddr = INADDR_ANY);
-    API_STATUS_CODE epollAdd(int fd);
     API_STATUS_CODE acceptSck();
     API_STATUS_CODE handleInBuf(int fd);
     API_STATUS_CODE handleOutBuf(int fd);

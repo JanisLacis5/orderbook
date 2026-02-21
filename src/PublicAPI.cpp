@@ -8,6 +8,7 @@
 #include <cerrno>
 #include <cstring>
 #include <random>
+#include "EpollManager.h"
 
 /*
     TODO:
@@ -33,7 +34,7 @@ namespace {
                 hdr.code = 400;
                 break;
         }
-        assert(hdr.message.size() <= MAX_HDR_MESSAGE_SIZE);
+        assert(hdr.message.size() <= HDR_MESSAGE_SIZE);
         hdr.message.resize(HDR_MESSAGE_SIZE, '\0');
 
         uint32_t codeNetEnd = htonl(hdr.code);
@@ -84,45 +85,11 @@ userId_t PublicAPI::generateUserId() {
     return id;
 }
 
-void PublicAPI::unsetEpollWriteable(int fd) {
-    auto& conn = conns_[fd];
-    if (!(conn->epollEvents & EPOLLOUT))
-        return;
-
-    conn->epollEvents &= ~EPOLLOUT;
-    epoll_event ev{.events = conn->epollEvents, .data = {.fd = fd}};
-
-    if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev) == -1)
-        perror("[sendRes]: epoll_ctl1");
-}
-
-void PublicAPI::setEpollWriteable(int fd) {
-    auto& conn = conns_[fd];
-    if (conn->epollEvents & EPOLLOUT)
-        return;
-
-    conn->epollEvents |= EPOLLOUT;
-    epoll_event ev{.events = conn->epollEvents, .data = {.fd = fd}};
-
-    if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev) == -1)
-        perror("[sendRes]: epoll_ctl1");
-}
-
 API_STATUS_CODE PublicAPI::bindSck(int fd, int port, in_addr_t ipaddr) {
     sockaddr_in addr{.sin_family = AF_INET, .sin_port = htons(port), .sin_addr = {.s_addr = ipaddr}};
 
     if (::bind(fd, (sockaddr*)&addr, sizeof(addr)) == -1) {
         perror("[bind_sck]: bind");
-        return API_STATUS_CODE::SYSTEM_ERROR;
-    }
-
-    return API_STATUS_CODE::SUCCESS;
-}
-
-API_STATUS_CODE PublicAPI::epollAdd(int fd) {
-    epoll_event ev{.events = EPOLLIN, .data = {.fd = fd}};
-    if (::epoll_ctl(epollfd_, EPOLL_CTL_ADD, fd, &ev) == -1) {
-        perror("[epoll_add]: epoll_ctl");
         return API_STATUS_CODE::SYSTEM_ERROR;
     }
 
@@ -153,7 +120,8 @@ API_STATUS_CODE PublicAPI::acceptSck() {
     // Make non-blocking
     ::fcntl(connFd, F_SETFL, ::fcntl(connFd, F_GETFL, 0) | O_NONBLOCK);
 
-    epollAdd(connFd);
+    if (!epollManager_.add(connFd))
+        return API_STATUS_CODE::SYSTEM_ERROR;
 
     connInit(connFd, EPOLLIN);
     return API_STATUS_CODE::SUCCESS;
@@ -193,7 +161,9 @@ API_STATUS_CODE PublicAPI::handleOutBuf(int fd) {
     auto toSend = [bufSize, sent] { return bufSize - sent; };
     auto bufPtr = [&buf, sent] { return buf.data() + sent; };
 
-    setEpollWriteable(fd);
+    if (!epollManager_.setWriteable(fd, conn->epollEvents))
+        return API_STATUS_CODE::SYSTEM_ERROR;
+
     auto n = ::send(fd, bufPtr(), toSend(), 0);
     if (n <= 0) {
         perror("[sendRes]: send1");
@@ -220,7 +190,8 @@ API_STATUS_CODE PublicAPI::handleOutBuf(int fd) {
 
     if (!toSend()) {
         conn->resetOut();
-        unsetEpollWriteable(fd);
+        if (!epollManager_.unsetWriteable(fd, conn->epollEvents))
+            return API_STATUS_CODE::SYSTEM_ERROR;
     }
 
     return API_STATUS_CODE::SUCCESS;
@@ -233,19 +204,9 @@ void PublicAPI::run() {
     if (::listen(serverSockFd_, SOMAXCONN) == -1)
         throw std::system_error(errno, std::system_category(), "listen");
 
-    epollfd_ = ::epoll_create1(0);
-    if (epollfd_ == -1)
-        throw std::system_error(errno, std::system_category(), "epoll_create");
-    epollAdd(serverSockFd_);
-
     std::array<epoll_event, MAX_EVENTS> events;
     while (true) {
-        int nfds = ::epoll_wait(epollfd_, events.data(), MAX_EVENTS, 0);
-        if (nfds == -1) {
-            if (errno == EINTR)
-                continue;
-            throw std::system_error(errno, std::system_category(), "epoll_wait");
-        }
+        int nfds = epollManager_.getEvents(events);
 
         for (int i = 0; i < nfds; ++i) {
             auto event = events[i];

@@ -1,5 +1,5 @@
 add_library(net STATIC
-    EpollLoop.cpp
+    EpollManager.cpp
 )
 
 target_include_directories(net
