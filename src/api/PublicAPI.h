@@ -3,7 +3,6 @@
 #include <netinet/in.h>
 #include <array>
 #include <map>
-#include <queue>
 #include "EpollManager.h"
 #include "Socket.h"
 #include "User.h"
@@ -30,10 +29,7 @@ private:
     EpollManager epollManager_{};
 
     std::map<int, std::unique_ptr<User>> users_;  // user socket fd : User*
-    std::queue<int> incomings_;
-    std::queue<int> outgoings_;
 
-    uint64_t generateUserId();
     API_STATUS_CODE acceptNewListener();
     std::array<std::byte, MAX_RESPONSE_LEN> createResBuf(API_STATUS_CODE status, std::span<std::byte> data);
 };

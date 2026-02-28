@@ -73,33 +73,23 @@ void PublicAPI::run() {
                 API_STATUS_CODE status = acceptNewListener();
                 if (status != API_STATUS_CODE::SUCCESS) {
                     // TODO: prepare an error message to actually send
-                    outgoings_.push(incfd);
+                    // TODO: dont use []
+            
+                    auto setWritable = [&](auto fd, auto& events) { return epollManager_.setWriteable(fd, events); };
+                    auto unsetWritable = [&](auto fd, auto& events) { return epollManager_.unsetWriteable(fd, events); };
+
+                    if (!users_[incfd]->send(setWritable, unsetWritable)) {
+                        // TODO: handle the error
+                        return;
+                    }
                 }
             }
-            else
-                incomings_.push(incfd);
-        }
-
-        while (!incomings_.empty()) {
-            auto topfd = incomings_.front();
-            incomings_.pop();
-
-            // TODO: dont use []
-            if (!users_[topfd]->receive()) {
-                // TODO: handle the error
-                return;
-            }
-        }
-
-        while (!outgoings_.empty()) {
-            auto topfd = outgoings_.front();
-            outgoings_.pop();
-
-            // TODO: dont use []
-            if (!users_[topfd]->send([&](auto fd, auto& events) { return epollManager_.setWriteable(fd, events); },
-                                     [&](auto fd, auto& events) { return epollManager_.unsetWriteable(fd, events); })) {
-                // TODO: handle the error
-                return;
+            else {
+                // TODO: dont use []
+                if (!users_[incfd]->receive()) {
+                    // TODO: handle the error
+                    return;
+                }
             }
         }
     }
