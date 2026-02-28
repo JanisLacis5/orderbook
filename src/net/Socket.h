@@ -1,17 +1,14 @@
-#include "Logger.h"
-
-#include <sys/socket.h>
-#include <unistd.h>
-#include <sys/types.h>
 #include <arpa/inet.h>
-
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include "Logger.h"
 
 class Socket {
 public:
     Socket();
-    ~Socket() {
-        ::close(fd);
-    };
+    Socket(int listeningFd);
+    ~Socket() { ::close(fd); };
 
     int fd;
 

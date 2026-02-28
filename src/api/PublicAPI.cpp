@@ -8,7 +8,6 @@
 #include <cerrno>
 #include <cstring>
 #include <random>
-#include "EpollManager.h"
 
 /*
     TODO:
@@ -38,7 +37,7 @@ namespace {
         hdr.message.resize(HDR_MESSAGE_SIZE, '\0');
 
         uint32_t codeNetEnd = htonl(hdr.code);
-        auto codeBytes = std::bit_cast<std::array<std::byte, 4>>(codeNetEnd);
+        auto codeBytes = std::bit_cast<std::array<std::byte, 4> >(codeNetEnd);
 
         std::array<std::byte, MAX_RESPONSE_LEN> buf;
         std::copy(codeBytes.begin(), codeBytes.end(), buf.begin());
@@ -48,22 +47,6 @@ namespace {
         return buf;
     }
 }  // namespace
-
-int PublicAPI::openSck() {
-    int fd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
-    if (fd == -1) {
-        perror("[open_sck]: socket");
-        return -1;
-    }
-
-    int so_reuseaddr_val = 1;
-    if (::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr_val, sizeof(so_reuseaddr_val)) == -1) {
-        perror("[open_sck]: setsockopt");
-        return -1;
-    }
-
-    return fd;
-}
 
 userId_t PublicAPI::generateUserId() {
     auto now = std::chrono::system_clock::now();
@@ -83,48 +66,6 @@ userId_t PublicAPI::generateUserId() {
         return generateUserId();
 
     return id;
-}
-
-API_STATUS_CODE PublicAPI::bindSck(int fd, int port, in_addr_t ipaddr) {
-    sockaddr_in addr{.sin_family = AF_INET, .sin_port = htons(port), .sin_addr = {.s_addr = ipaddr}};
-
-    if (::bind(fd, (sockaddr*)&addr, sizeof(addr)) == -1) {
-        perror("[bind_sck]: bind");
-        return API_STATUS_CODE::SYSTEM_ERROR;
-    }
-
-    return API_STATUS_CODE::SUCCESS;
-}
-
-void PublicAPI::connInit(int fd, uint32_t events) {
-    auto conn = std::make_unique<Conn>();
-    auto userId = generateUserId();
-
-    conn->fd = fd;
-    conn->holderId = userId;
-    conn->epollEvents = events;
-    uid2fd_[userId] = fd;
-    messageQueues_[userId] = std::make_unique<MessageQueue_t>(MESSAGE_QUEUE_SIZE);
-}
-
-API_STATUS_CODE PublicAPI::acceptSck() {
-    sockaddr_in local{};
-    socklen_t addrlen = sizeof(local);
-
-    int connFd = ::accept(serverSockFd_, (sockaddr*)&local, &addrlen);
-    if (connFd == -1) {
-        perror("[accept_sck]: accept");
-        return API_STATUS_CODE::SYSTEM_ERROR;
-    }
-
-    // Make non-blocking
-    ::fcntl(connFd, F_SETFL, ::fcntl(connFd, F_GETFL, 0) | O_NONBLOCK);
-
-    if (!epollManager_.add(connFd))
-        return API_STATUS_CODE::SYSTEM_ERROR;
-
-    connInit(connFd, EPOLLIN);
-    return API_STATUS_CODE::SUCCESS;
 }
 
 API_STATUS_CODE PublicAPI::handleInBuf(int fd) {
@@ -197,13 +138,25 @@ API_STATUS_CODE PublicAPI::handleOutBuf(int fd) {
     return API_STATUS_CODE::SUCCESS;
 }
 
+API_STATUS_CODE PublicAPI::acceptNewListener() {
+    Socket acceptedSck{listenSocket_.fd};
+
+    if (!epollManager_.add(acceptedSck.fd)) {
+        return API_STATUS_CODE::SYSTEM_ERROR;
+    }
+
+    // create a user with this socket
+
+    return API_STATUS_CODE::SUCCESS;
+}
+
+PublicAPI::PublicAPI() {
+    listenSocket_.bind(INADDR_ANY, 8000);
+    listenSocket_.listen();
+}
+
 // TODO: replace throws with responses to the sender
 void PublicAPI::run() {
-    serverSockFd_ = openSck();
-    bindSck(serverSockFd_);
-    if (::listen(serverSockFd_, SOMAXCONN) == -1)
-        throw std::system_error(errno, std::system_category(), "listen");
-
     std::array<epoll_event, MAX_EVENTS> events;
     while (true) {
         int nfds = epollManager_.getEvents(events);
@@ -212,8 +165,8 @@ void PublicAPI::run() {
             auto event = events[i];
             int incfd = event.data.fd;
 
-            if (incfd == serverSockFd_) {
-                API_STATUS_CODE status = acceptSck();
+            if (incfd == listenSocket_.fd) {
+                API_STATUS_CODE status = acceptNewListener();
                 if (status != API_STATUS_CODE::SUCCESS) {
                     // TODO: prepare an error message to actually send
                     outgoings_.push(incfd);

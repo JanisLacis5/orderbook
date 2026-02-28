@@ -6,6 +6,7 @@
 #include <queue>
 #include "EpollManager.h"
 #include "SPSCQueue.h"
+#include "Socket.h"
 #include "usings.h"
 
 constexpr size_t MESSAGE_QUEUE_SIZE = 100'000;
@@ -48,31 +49,28 @@ struct APIResponse {
 
 class PublicAPI {
 public:
-    PublicAPI() {};
-    ~PublicAPI() { ::close(serverSockFd_); }
+    PublicAPI();
+    ~PublicAPI() {}
 
     void run();
 
 private:
-    using MessageQueue_t = SPSCQueue<std::array<std::byte, MAX_MESSAGE_LEN>>;
+    using MessageQueue_t = SPSCQueue<std::array<std::byte, MAX_MESSAGE_LEN> >;
 
-    int serverSockFd_{-1};
+    Socket listenSocket_{};
     EpollManager epollManager_{};
 
-    std::map<userId_t, int> uid2fd_;
-    std::map<int, std::unique_ptr<Conn>> conns_;
+    std::map<userId_t, int> uid2fd_;               // TODO: hopefully delete
+    std::map<int, std::unique_ptr<Conn> > conns_;  // TODO: keep users not conns
     // TODO: make this thread safe and process messages on multiple threads
     std::queue<int> incomings_;
     std::queue<int> outgoings_;
 
-    std::map<userId_t, std::unique_ptr<MessageQueue_t>> messageQueues_;
+    std::map<userId_t, std::unique_ptr<MessageQueue_t> > messageQueues_;
 
-    int openSck();
-    void connInit(int fd, uint32_t events);
     uint64_t generateUserId();
-
-    API_STATUS_CODE bindSck(int fd, int port = 8000, in_addr_t ipaddr = INADDR_ANY);
-    API_STATUS_CODE acceptSck();
+    API_STATUS_CODE acceptNewListener();
+    // TODO: use userId's as much as possible instead of socket fd's
     API_STATUS_CODE handleInBuf(int fd);
     API_STATUS_CODE handleOutBuf(int fd);
 };

@@ -44,15 +44,16 @@ SOFTWARE.
 
 namespace rigtorp {
 
-    template <typename T, typename Allocator = std::allocator<T>>
+    template <typename T, typename Allocator = std::allocator<T> >
     class SPSCQueue {
 #if defined(__cpp_if_constexpr) && defined(__cpp_lib_void_t)
         template <typename Alloc2, typename = void>
         struct has_allocate_at_least : std::false_type {};
 
         template <typename Alloc2>
-        struct has_allocate_at_least<Alloc2, std::void_t<typename Alloc2::value_type,
-                                                         decltype(std::declval<Alloc2&>().allocate_at_least(size_t{}))>>
+        struct has_allocate_at_least<
+            Alloc2,
+            std::void_t<typename Alloc2::value_type, decltype(std::declval<Alloc2&>().allocate_at_least(size_t{}))> >
             : std::true_type {};
 #endif
 
@@ -61,7 +62,8 @@ namespace rigtorp {
         using value_type = T;
 
         explicit SPSCQueue(const size_t capacity, const Allocator& allocator = Allocator())
-            : capacity_(capacity), allocator_(allocator) {
+            : capacity_(capacity),
+              allocator_(allocator) {
             // The queue needs at least one element
             if (capacity_ < 1) {
                 capacity_ = 1;

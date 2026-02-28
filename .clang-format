@@ -17,6 +17,7 @@ BraceWrapping:
   BeforeCatch: true
 ColumnLimit: 120 
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ConstructorInitializerIndentWidth: 4
 PointerAlignment: Left
 DerivePointerAlignment: false
 NamespaceIndentation: All
@@ -32,3 +33,5 @@ SpaceBeforeParens: ControlStatements
 SpaceBeforeRangeBasedForLoopColon: true
 SpaceInEmptyParentheses: false
 Cpp11BracedListStyle: true
+BreakConstructorInitializers: BeforeColon
+PackConstructorInitializers: Never

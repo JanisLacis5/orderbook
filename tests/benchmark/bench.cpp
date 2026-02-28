@@ -24,7 +24,7 @@ template <typename T>
 struct isRigtorp : std::false_type {};
 
 template <typename ValueT>
-struct isRigtorp<rigtorp::SPSCQueue<ValueT>> : std::true_type {};
+struct isRigtorp<rigtorp::SPSCQueue<ValueT> > : std::true_type {};
 
 template <template <typename, typename...> class FifoT>
 void BM_Fifo(benchmark::State& state) {

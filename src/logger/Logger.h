@@ -11,12 +11,13 @@ enum class LogColor { GREEN, RED, YELLOW, WHITE, PURPLE, NONE, RESET };
 class Logger {
 public:
     Logger(std::string_view prefix, DebugLevel level = DebugLevel::ERROR)
-        : prefix_{std::move(prefix)}, level_{level} {};
+        : prefix_{std::move(prefix)},
+          level_{level} {};
     ~Logger() {};
 
     void success(std::string_view mes, LogColor color = LogColor::GREEN);
     void error(std::string_view mes, LogColor color = LogColor::RED);
-    void logerrno(std::string_view mes, LogColor color = LogColor::RED); // function that is used instead of perror
+    void logerrno(std::string_view mes, LogColor color = LogColor::RED);  // function that is used instead of perror
     void warn(std::string_view mes, LogColor color = LogColor::YELLOW);
     void info(std::string_view mes, LogColor color = LogColor::NONE);
     void debug(std::string_view mes, LogColor color = LogColor::NONE);

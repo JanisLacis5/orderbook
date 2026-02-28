@@ -66,7 +66,7 @@ add_executable(app
     ${PROJECT_SOURCE_DIR}/src/main.cpp
 )
 target_link_libraries(app
-    PRIVATE orderbook publicAPI
+    PRIVATE orderbook api
 )
 
 # FORMATTING TARGET

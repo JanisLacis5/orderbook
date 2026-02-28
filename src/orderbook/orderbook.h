@@ -35,8 +35,8 @@ private:
         uint32_t orderCnt = 0;
     };
 
-    std::map<price_t, orderPtrs_t, std::less<price_t>> ask_;
-    std::map<price_t, orderPtrs_t, std::greater<price_t>> bid_;
+    std::map<price_t, orderPtrs_t, std::less<price_t> > ask_;
+    std::map<price_t, orderPtrs_t, std::greater<price_t> > bid_;
     std::map<price_t, LevelData> levelData_;
     std::unordered_map<orderId_t, OrderInfo> orders_;
     orderId_t lastOrderId_{0};

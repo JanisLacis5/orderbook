@@ -1,5 +1,6 @@
 add_library(net STATIC
     EpollManager.cpp
+    Socket.cpp
 )
 
 target_include_directories(net
