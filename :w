@@ -42,9 +42,9 @@ public:
     userId_t id;
     int sckFd{-1};
 
+    bool receive();
     template <typename EpollSet, typename EpollUnset>
     bool send(EpollSet&& set, EpollUnset&& unset);
-    bool receive();
 
 private:
     using RawMessage = std::array<std::byte, MAX_MESSAGE_LEN>;

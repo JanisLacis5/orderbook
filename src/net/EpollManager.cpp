@@ -38,11 +38,11 @@ bool EpollManager::add(int fd) {
     return true;
 }
 
-bool EpollManager::setWriteable(int fd, uint32_t initialEvents) {
-    if (initialEvents & EPOLLOUT)
+bool EpollManager::setWriteable(int fd, uint32_t& events) {
+    if (events & EPOLLOUT)
         return true;
 
-    uint32_t events = initialEvents | EPOLLOUT;
+    events |= EPOLLOUT;
     epoll_event ev{.events = events, .data = {.fd = fd}};
 
     if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev) == -1) {
@@ -53,11 +53,11 @@ bool EpollManager::setWriteable(int fd, uint32_t initialEvents) {
     return true;
 }
 
-bool EpollManager::unsetWriteable(int fd, uint32_t initialEvents) {
-    if (!(initialEvents & EPOLLOUT))
-        return false;
+bool EpollManager::unsetWriteable(int fd, uint32_t& events) {
+    if (!(events & EPOLLOUT))
+        return true;
 
-    uint32_t events = initialEvents & (~EPOLLOUT);
+    events &= ~EPOLLOUT;
     epoll_event ev{.events = events, .data = {.fd = fd}};
 
     if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev) == -1) {

@@ -17,8 +17,8 @@ public:
 
     bool add(int fd);
     int getEvents(std::array<epoll_event, MAX_EVENTS>& out);
-    bool setWriteable(int fd, uint32_t initialEvents);
-    bool unsetWriteable(int fd, uint32_t initialEvents);
+    bool setWriteable(int fd, uint32_t& events);
+    bool unsetWriteable(int fd, uint32_t& events);
 
 private:
     int epollfd_;

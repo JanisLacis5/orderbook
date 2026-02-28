@@ -1,3 +1,5 @@
+#pragma once
+
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -10,7 +12,8 @@ public:
     Socket(int listeningFd);
     ~Socket() { ::close(fd); };
 
-    int fd;
+    int fd{-1};
+    uint32_t epollEvents{0};
 
     bool bind(in_addr_t ip, int port);
     bool listen(int backlog = SOMAXCONN);
