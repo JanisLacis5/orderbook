@@ -97,8 +97,7 @@ void PublicAPI::run() {
 
             // TODO: dont use []
             if (!users_[topfd]->send([&](auto fd, auto& events) { return epollManager_.setWriteable(fd, events); },
-                                     [&](auto fd, auto& events) { return epollManager_.unsetWriteable(fd, events); })) 
-            {
+                                     [&](auto fd, auto& events) { return epollManager_.unsetWriteable(fd, events); })) {
                 // TODO: handle the error
                 return;
             }

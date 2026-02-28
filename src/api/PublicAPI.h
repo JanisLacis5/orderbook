@@ -7,30 +7,8 @@
 #include "EpollManager.h"
 #include "Socket.h"
 #include "User.h"
-#include "usings.h"
 
 enum class API_STATUS_CODE { SUCCESS, BAD_MESSAGE_LEN, SYSTEM_ERROR };
-
-struct Conn {
-    int fd;
-    userId_t holderId;
-    uint32_t epollEvents;
-
-    size_t outSize{0};
-    size_t outSent{0};
-    size_t inSize{0};
-    size_t inReceived{0};
-
-    // buffers that hold excess data from a partial read e.g. unfinished message
-    // always starts with total_mes_len
-    std::array<std::byte, MAX_MESSAGE_LEN> in;   // from conn
-    std::array<std::byte, MAX_MESSAGE_LEN> out;  // to conn
-
-    void resetOut() {
-        outSize = 0;
-        outSent = 0;
-    }
-};
 
 class PublicAPI {
 public:
