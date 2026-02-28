@@ -37,15 +37,10 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest googlebenchmark)
 
 # CORE LIBRARIES / EXECUTABLES
-# Data Structures
-add_library(data_structures INTERFACE)
-target_include_directories(data_structures
-    INTERFACE
-    ${PROJECT_SOURCE_DIR}/src/data_structures
-)
-
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/data_structures)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/net)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/logger)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/api)
 
 # Common
 add_library(common INTERFACE)
@@ -63,19 +58,7 @@ target_include_directories(orderbook
     ${PROJECT_SOURCE_DIR}/src/orderbook
 )
 target_link_libraries(orderbook
-    PUBLIC data_structures common
-)
-
-# API
-add_library(publicAPI
-    ${PROJECT_SOURCE_DIR}/src/PublicAPI.cpp
-)
-target_include_directories(publicAPI
-    PUBLIC
-    ${PROJECT_SOURCE_DIR}/src
-)
-target_link_libraries(publicAPI
-    PUBLIC data_structures common net
+    PUBLIC spsc_queue common
 )
 
 # Main
@@ -116,7 +99,7 @@ target_link_libraries(test_core
     PRIVATE
     common
     orderbook
-    data_structures
+    spsc_queue
     gtest_main
     project_sanitizers
 )
@@ -126,5 +109,5 @@ gtest_discover_tests(test_core DISCOVERY_MODE PRE_TEST)
 # BENCHMARK
 if (NOT ENABLE_TSAN)  # TODO: do this better (check if built in release mode)
     add_executable(bench "${PROJECT_SOURCE_DIR}/tests/benchmark/bench.cpp")
-    target_link_libraries(bench PRIVATE benchmark::benchmark data_structures)
+    target_link_libraries(bench PRIVATE benchmark::benchmark spsc_queue)
 endif ()

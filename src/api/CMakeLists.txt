@@ -1,0 +1,21 @@
+add_library(api
+    ${PROJECT_SOURCE_DIR}/src/api/PublicAPI.cpp
+)
+target_include_directories(api
+    PUBLIC
+    ${PROJECT_SOURCE_DIR}/src/api
+)
+target_link_libraries(api
+    PUBLIC spsc_queue common net
+)
+
+add_library(user
+    ${PROJECT_SOURCE_DIR}/src/api/User.cpp
+)
+target_include_directories(user
+    PUBLIC
+    ${PROJECT_SOURCE_DIR}/src/api
+)
+target_link_libraries(user
+    PUBLIC socket spsc_queue
+)
