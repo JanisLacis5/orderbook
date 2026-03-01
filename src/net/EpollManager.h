@@ -15,6 +15,11 @@ public:
             ::close(epollfd_);
     };
 
+    EpollManager(const EpollManager& other) = delete;
+    EpollManager(EpollManager&& other) = delete;
+    EpollManager& operator=(const EpollManager& other) = delete;
+    EpollManager& operator=(EpollManager&& other) = delete;
+
     bool add(int fd);
     int getEvents(std::array<epoll_event, MAX_EVENTS>& out);
     bool setWriteable(int fd, uint32_t& events);

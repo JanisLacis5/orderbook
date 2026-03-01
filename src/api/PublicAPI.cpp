@@ -42,17 +42,19 @@ std::array<std::byte, MAX_RESPONSE_LEN> PublicAPI::createResBuf(API_STATUS_CODE 
     return buf;
 }
 
-API_STATUS_CODE PublicAPI::acceptNewListener() {
-    auto user = std::make_unique<User>(listenSocket_.fd, [&](userId_t uid) {
-        return std::find_if(users_.begin(), users_.end(), [uid](const auto& user) { return user.first == uid; }) ==
+int PublicAPI::acceptNewListener() {
+    auto user = std::make_unique<User>(listenSocket_.fd(), [&](userId_t uid) {
+        return std::find_if(users_.begin(), users_.end(), [uid](const auto& user) { return user.second->id == uid; }) ==
                users_.end();
     });
-    users_[user->sckFd] = std::move(user);
+    users_[user->sckFd()] = std::move(user);
 
-    if (!epollManager_.add(user->sckFd)) {
-        return API_STATUS_CODE::SYSTEM_ERROR;
+    if (!epollManager_.add(user->sckFd())) {
+        users_.erase(user->sckFd());
+        return -1;
     }
-    return API_STATUS_CODE::SUCCESS;
+
+    return user->sckFd();
 }
 
 PublicAPI::PublicAPI() {
@@ -69,26 +71,9 @@ void PublicAPI::run() {
             auto event = events[i];
             int incfd = event.data.fd;
 
-            if (incfd == listenSocket_.fd) {
-                API_STATUS_CODE status = acceptNewListener();
-                if (status != API_STATUS_CODE::SUCCESS) {
-                    // TODO: prepare an error message to actually send
-
-                    auto setWritable = [&](auto fd, auto& events) { return epollManager_.setWriteable(fd, events); };
-                    auto unsetWritable = [&](auto fd, auto& events) {
-                        return epollManager_.unsetWriteable(fd, events);
-                    };
-
-                    auto user = users_.find(incfd);
-                    if (user == users_.end() || !user->second)
-                        // TODO: send a response to user (500: internal error or something)
-                        throw std::logic_error("no pointer to a user");
-
-                    if (!user->second->send(setWritable, unsetWritable)) {
-                        // TODO: handle the error
-                        return;
-                    }
-                }
+            if (incfd == listenSocket_.fd()) {
+                if (acceptNewListener() == -1)
+                    continue;
             }
             else {
                 auto user = users_.find(incfd);

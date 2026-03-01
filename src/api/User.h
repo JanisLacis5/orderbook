@@ -33,14 +33,17 @@ public:
         while (!validId(id)) {
             id = generateId();
         }
-
-        sckFd = socket_.fd;
     }
 
     ~User() {}
 
+    User(const User& other) = delete;
+    User& operator=(const User& other) = delete;
+    User(User&& other) = delete;
+    User& operator=(User&&) = delete;
+
     userId_t id;
-    int sckFd{-1};
+    int sckFd() const { return socket_.fd(); };
 
     template <typename EpollSet, typename EpollUnset>
     bool send(EpollSet&& set, EpollUnset&& unset);
@@ -67,10 +70,10 @@ bool User::send(EpollSet&& set, EpollUnset&& unset) {
     auto toSend = [&] { return outSize_ - sent_; };
     auto bufPtr = [&] { return outBuffer_.data() + sent_; };
 
-    if (!set(socket_.fd, socket_.epollEvents))
+    if (!set(socket_.fd(), socket_.epollEvents))
         return false;
 
-    auto n = ::send(socket_.fd, bufPtr(), toSend(), 0);
+    auto n = ::send(socket_.fd(), bufPtr(), toSend(), 0);
     if (n <= 0) {
         logger_.logerrno("[sendRes]: send1");
         return false;
@@ -78,7 +81,7 @@ bool User::send(EpollSet&& set, EpollUnset&& unset) {
     sent_ += n;
 
     while (toSend() > 0 && n > 0) {
-        n = ::send(socket_.fd, bufPtr(), toSend(), 0);
+        n = ::send(socket_.fd(), bufPtr(), toSend(), 0);
 
         if (n == 0)
             break;
@@ -97,7 +100,7 @@ bool User::send(EpollSet&& set, EpollUnset&& unset) {
     if (!toSend()) {
         sent_ = 0;
         outSize_ = 0;
-        if (!unset(socket_.fd, socket_.epollEvents))
+        if (!unset(socket_.fd(), socket_.epollEvents))
             return false;
     }
 

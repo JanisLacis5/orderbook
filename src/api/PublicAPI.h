@@ -14,6 +14,11 @@ public:
     PublicAPI();
     ~PublicAPI() {}
 
+    PublicAPI(const PublicAPI& other) = delete;
+    PublicAPI(PublicAPI&& other) = delete;
+    PublicAPI& operator=(const PublicAPI& other) = delete;
+    PublicAPI& operator=(PublicAPI&& other) = delete;
+
     void run();
 
 private:
@@ -30,6 +35,6 @@ private:
 
     std::map<int, std::unique_ptr<User>> users_;  // user socket fd : User*
 
-    API_STATUS_CODE acceptNewListener();
+    int acceptNewListener();
     std::array<std::byte, MAX_RESPONSE_LEN> createResBuf(API_STATUS_CODE status, std::span<std::byte> data);
 };

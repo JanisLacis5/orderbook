@@ -8,8 +8,6 @@ EpollManager::EpollManager() {
         logger_.logerrno("failed to create epoll pool");
         throw std::system_error(errno, std::system_category(), "epoll_create");
     }
-
-    add(epollfd_);
 }
 
 int EpollManager::getEvents(std::array<epoll_event, MAX_EVENTS>& out) {
