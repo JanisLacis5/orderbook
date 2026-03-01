@@ -9,6 +9,7 @@
 #include <cerrno>
 #include <cstring>
 #include <memory>
+#include <stdexcept>
 
 std::array<std::byte, MAX_RESPONSE_LEN> PublicAPI::createResBuf(API_STATUS_CODE status, std::span<std::byte> data) {
     APIResponse hdr;
@@ -59,7 +60,6 @@ PublicAPI::PublicAPI() {
     listenSocket_.listen();
 }
 
-// TODO: replace throws with responses to the sender
 void PublicAPI::run() {
     std::array<epoll_event, MAX_EVENTS> events;
     while (true) {
@@ -73,20 +73,30 @@ void PublicAPI::run() {
                 API_STATUS_CODE status = acceptNewListener();
                 if (status != API_STATUS_CODE::SUCCESS) {
                     // TODO: prepare an error message to actually send
-                    // TODO: dont use []
-            
-                    auto setWritable = [&](auto fd, auto& events) { return epollManager_.setWriteable(fd, events); };
-                    auto unsetWritable = [&](auto fd, auto& events) { return epollManager_.unsetWriteable(fd, events); };
 
-                    if (!users_[incfd]->send(setWritable, unsetWritable)) {
+                    auto setWritable = [&](auto fd, auto& events) { return epollManager_.setWriteable(fd, events); };
+                    auto unsetWritable = [&](auto fd, auto& events) {
+                        return epollManager_.unsetWriteable(fd, events);
+                    };
+
+                    auto user = users_.find(incfd);
+                    if (user == users_.end() || !user->second)
+                        // TODO: send a response to user (500: internal error or something)
+                        throw std::logic_error("no pointer to a user");
+
+                    if (!user->second->send(setWritable, unsetWritable)) {
                         // TODO: handle the error
                         return;
                     }
                 }
             }
             else {
-                // TODO: dont use []
-                if (!users_[incfd]->receive()) {
+                auto user = users_.find(incfd);
+                if (user == users_.end() || !user->second)
+                    // TODO: send a response to user (500: internal error or something)
+                    throw std::logic_error("no pointer to a user");
+
+                if (!user->second->receive()) {
                     // TODO: handle the error
                     return;
                 }
