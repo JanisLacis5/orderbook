@@ -13,6 +13,7 @@ AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
 BreakBeforeBraces: Linux 
 BreakConstructorInitializers: BeforeComma
+BreakTemplateDeclarations: Yes
 ColumnLimit: 120 
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 ConstructorInitializerIndentWidth: 4

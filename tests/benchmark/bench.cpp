@@ -20,13 +20,16 @@ static void pinThread(int cpu)
 constexpr auto cpu1 = 1;
 constexpr auto cpu2 = 2;
 
-template <typename T> struct isRigtorp : std::false_type {
+template <typename T>
+struct isRigtorp : std::false_type {
 };
 
-template <typename ValueT> struct isRigtorp<rigtorp::SPSCQueue<ValueT>> : std::true_type {
+template <typename ValueT>
+struct isRigtorp<rigtorp::SPSCQueue<ValueT>> : std::true_type {
 };
 
-template <template <typename, typename...> class FifoT> void BM_Fifo(benchmark::State& state)
+template <template <typename, typename...> class FifoT>
+void BM_Fifo(benchmark::State& state)
 {
     using fifo_type = FifoT<std::int_fast64_t>;
     using value_type = typename fifo_type::value_type;

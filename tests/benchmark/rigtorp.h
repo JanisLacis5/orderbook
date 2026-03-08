@@ -45,10 +45,12 @@ SOFTWARE.
 namespace rigtorp
 {
 
-    template <typename T, typename Allocator = std::allocator<T>> class SPSCQueue
+    template <typename T, typename Allocator = std::allocator<T>>
+    class SPSCQueue
     {
 #if defined(__cpp_if_constexpr) && defined(__cpp_lib_void_t)
-        template <typename Alloc2, typename = void> struct has_allocate_at_least : std::false_type {
+        template <typename Alloc2, typename = void>
+        struct has_allocate_at_least : std::false_type {
         };
 
         template <typename Alloc2>

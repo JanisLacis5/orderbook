@@ -11,7 +11,8 @@
 #include <thread>
 #include <utility>
 
-template <typename T> inline __attribute__((always_inline)) void doNotOptimize(T const& value)
+template <typename T>
+inline __attribute__((always_inline)) void doNotOptimize(T const& value)
 {
     asm volatile("" : : "r,m"(value) : "memory");
 }
@@ -29,10 +30,12 @@ static void pinThread(int cpu)
     }
 }
 
-template <typename T> struct isRigtorp : std::false_type {
+template <typename T>
+struct isRigtorp : std::false_type {
 };
 
-template <typename T> class Bench
+template <typename T>
+class Bench
 {
 public:
     using value_type = typename T::value_type;
@@ -109,12 +112,14 @@ private:
 };
 
 // "legacy" API
-template <typename T> auto bench(char const* name, long iters, int cpu1, int cpu2)
+template <typename T>
+auto bench(char const* name, long iters, int cpu1, int cpu2)
 {
     return Bench<T>{}(iters, cpu1, cpu2);
 }
 
-template <template <typename> class FifoT> void bench(char const* name, int argc, char* argv[])
+template <template <typename> class FifoT>
+void bench(char const* name, int argc, char* argv[])
 {
     int cpu1 = 1;
     int cpu2 = 2;

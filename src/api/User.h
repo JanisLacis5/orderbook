@@ -9,8 +9,8 @@
 class User
 {
 public:
-    template <typename IdValidationFunction>
-    User(int serverSckFd, IdValidationFunction validId)
+    template <typename TIdValidationFunction>
+    User(int serverSckFd, TIdValidationFunction validId)
         : socket_{serverSckFd}
     {
         id = generateId();
@@ -30,8 +30,10 @@ public:
     userId_t id;
     int sckFd() const { return socket_.fd(); }
 
-    template <typename EpollSet, typename EpollUnset> bool send(EpollSet&& set, EpollUnset&& unset);
+    template <typename EpollSet, typename EpollUnset>
+    bool send(EpollSet&& set, EpollUnset&& unset);
     bool receive();
+    
 
 private:
     using RawMessage = std::array<std::byte, MAX_MESSAGE_LEN>;
@@ -46,49 +48,50 @@ private:
 
     Logger logger_{"User"};
     Socket socket_;
-    MessageQueue_t mesQueue{MESSAGE_QUEUE_SIZE};
+    MessageQueue_t mesQueue_{MESSAGE_QUEUE_SIZE};
 
     userId_t generateId();
 };
 
-template <typename EpollSet, typename EpollUnset> bool User::send(EpollSet&& set, EpollUnset&& unset)
+template <typename EpollSet, typename EpollUnset>
+bool User::send(EpollSet&& set, EpollUnset&& unset)
 {
-    auto toSend = [&] { return outSize_ - sent_; };
-    auto bufPtr = [&] { return outBuffer_.data() + sent_; };
+        auto toSend = [&] { return outSize_ - sent_; };
+        auto bufPtr = [&] { return outBuffer_.data() + sent_; };
 
-    if (!set(socket_.fd(), socket_.epollEvents))
-        return false;
+        if (!set(socket_.fd(), socket_.epollEvents))
+            return false;
 
-    auto n = ::send(socket_.fd(), bufPtr(), toSend(), 0);
-    if (n <= 0) {
-        logger_.logerrno("[sendRes]: send1");
-        return false;
-    }
-    sent_ += n;
-
-    while (toSend() > 0 && n > 0) {
-        n = ::send(socket_.fd(), bufPtr(), toSend(), 0);
-
-        if (n == 0)
-            break;
-
-        if (n < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                break;
-
-            perror("[sendRes]: send2");
+        auto n = ::send(socket_.fd(), bufPtr(), toSend(), 0);
+        if (n <= 0) {
+            logger_.logerrno("[sendRes]: send1");
             return false;
         }
-
         sent_ += n;
-    }
 
-    if (!toSend()) {
-        sent_ = 0;
-        outSize_ = 0;
-        if (!unset(socket_.fd(), socket_.epollEvents))
-            return false;
-    }
+        while (toSend() > 0 && n > 0) {
+            n = ::send(socket_.fd(), bufPtr(), toSend(), 0);
 
-    return true;
-}
+            if (n == 0)
+                break;
+
+            if (n < 0) {
+                if (errno == EAGAIN || errno == EWOULDBLOCK)
+                    break;
+
+                perror("[sendRes]: send2");
+                return false;
+            }
+
+            sent_ += n;
+        }
+
+        if (!toSend()) {
+            sent_ = 0;
+            outSize_ = 0;
+            if (!unset(socket_.fd(), socket_.epollEvents))
+                return false;
+        }
+
+        return true;
+    }

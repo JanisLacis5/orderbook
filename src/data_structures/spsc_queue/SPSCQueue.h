@@ -7,7 +7,8 @@
 
 constexpr size_t cacheline_size = 64;
 
-template <typename T, typename Alloc = std::allocator<T>> class SPSCQueue : private Alloc
+template <typename T, typename Alloc = std::allocator<T>>
+class SPSCQueue : private Alloc
 {
 public:
     using value_type = T;

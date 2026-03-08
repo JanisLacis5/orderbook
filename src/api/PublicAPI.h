@@ -2,6 +2,7 @@
 
 #include "EpollManager.h"
 #include "Socket.h"
+#include "Messager.h"
 #include "User.h"
 #include <array>
 #include <map>
