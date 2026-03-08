@@ -1,6 +1,5 @@
 #pragma once
 
-#include <random>
 #include "Logger.h"
 #include "SPSCQueue.h"
 #include "Socket.h"
@@ -12,20 +11,6 @@ public:
     template <typename IdValidationFunction>
     User(int serverSckFd, IdValidationFunction validId)
         : socket_{serverSckFd} {
-        auto generateId = []() {
-            auto now = std::chrono::system_clock::now();
-            auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-
-            // 42 bits for timestamp, 22 bits for random
-            std::random_device rd;
-            std::mt19937_64 gen(rd());
-            std::uniform_int_distribution<uint64_t> dist(0, (1ull << 22) - 1);
-
-            uint64_t timestamp = static_cast<uint64_t>(ms) & 0x3ffffffffff;  // 42 bits
-            uint64_t random = dist(gen);
-
-            return (timestamp << 22) | random;
-        };
 
         id = generateId();
 
@@ -63,6 +48,8 @@ private:
     Logger logger_{"User"};
     Socket socket_;
     MessageQueue_t mesQueue{MESSAGE_QUEUE_SIZE};
+
+    userId_t generateId();
 };
 
 template <typename EpollSet, typename EpollUnset>

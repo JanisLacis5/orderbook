@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include <cstddef>
 
 constexpr std::size_t MESSAGE_QUEUE_SIZE = 100'000;
 constexpr std::size_t MAX_MESSAGE_LEN = 4096;
