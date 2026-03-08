@@ -1,10 +1,10 @@
+#include "orderbook.h"
+#include "types.h"
+#include "usings.h"
 #include <gtest/gtest.h>
 #include <numeric>
 #include <random>
 #include <stdexcept>
-#include "orderbook.h"
-#include "types.h"
-#include "usings.h"
 
 struct SideState {
     uint32_t orderCnt{0};
@@ -12,7 +12,8 @@ struct SideState {
     uint32_t depth{0};
     std::optional<price_t> bestPrice{};
 
-    bool operator==(const SideState& other) const {
+    bool operator==(const SideState& other) const
+    {
         return orderCnt == other.orderCnt && volume == other.volume && depth == other.depth &&
                bestPrice == other.bestPrice;
     }
@@ -30,7 +31,8 @@ struct LevelState {
     uint32_t volume{0};
     uint32_t orderCnt{0};
 
-    bool operator==(const LevelView& other) const {
+    bool operator==(const LevelView& other) const
+    {
         return price == other.price && volume == other.volume && orderCnt == other.orderCnt;
     }
 };
@@ -40,32 +42,37 @@ struct TradeState {
     orderId_t buyer;
     quantity_t quantity;
 
-    bool operator==(const Trade& other) const {
+    bool operator==(const Trade& other) const
+    {
         return seller == other.seller && buyer == other.buyer && quantity == other.quantity;
     }
 };
 
-class OrderbookTest : public testing::Test {
+class OrderbookTest : public testing::Test
+{
 protected:
     Orderbook orderbook;
     price_t defaultPrice{100};
     quantity_t defaultQuantity{10};
     std::random_device rr;
 
-    int randomInt(int l, int r) {
+    int randomInt(int l, int r)
+    {
         std::default_random_engine e1(rr());
         std::uniform_int_distribution<int> uniform_dist(l, r);
         return uniform_dist(e1);
     }
 
-    void assertBookHealthy() const {
+    void assertBookHealthy() const
+    {
         std::optional<price_t> bestBid = orderbook.bestBid();
         std::optional<price_t> bestAsk = orderbook.bestAsk();
         if (bestBid.has_value() && bestAsk.has_value())
             EXPECT_TRUE(bestBid.value() < bestAsk.value());
     }
 
-    void assertBookState(BookState& expecetedState) const {
+    void assertBookState(BookState& expecetedState) const
+    {
         std::vector<LevelView> bidDepth = orderbook.fullDepthBid();
         std::vector<LevelView> askDepth = orderbook.fullDepthAsk();
         auto cntVolume = [](size_t cnt, const LevelView& level) { return cnt + level.volume; };
@@ -91,7 +98,8 @@ protected:
         EXPECT_EQ(expecetedState, actualState);
     }
 
-    orderId_t addRestingOrder(quantity_t quantity, price_t price, OrderType type, Side side) {
+    orderId_t addRestingOrder(quantity_t quantity, price_t price, OrderType type, Side side)
+    {
         auto [orderId, trades] = orderbook.addOrder(quantity, price, type, side);
         EXPECT_TRUE(trades.empty());
         return orderId;
@@ -101,19 +109,25 @@ protected:
     void TearDown() override { assertBookHealthy(); }
 };
 
-class PassiveOrderbookTest : public OrderbookTest {};
+class PassiveOrderbookTest : public OrderbookTest
+{
+};
 
-class MarketOrderbookTest : public OrderbookTest {};
+class MarketOrderbookTest : public OrderbookTest
+{
+};
 
 // PASSIVE ORDERS
-TEST_F(PassiveOrderbookTest, InitialState) {
+TEST_F(PassiveOrderbookTest, InitialState)
+{
     EXPECT_FALSE(orderbook.bestAsk().has_value());
     EXPECT_FALSE(orderbook.bestBid().has_value());
     EXPECT_TRUE(orderbook.fullDepthAsk().empty());
     EXPECT_TRUE(orderbook.fullDepthBid().empty());
 }
 
-TEST_F(PassiveOrderbookTest, OneBidOnEmptyBook) {
+TEST_F(PassiveOrderbookTest, OneBidOnEmptyBook)
+{
     price_t price = defaultPrice;
     quantity_t quantity = defaultQuantity;
     auto orderId = addRestingOrder(quantity, price, OrderType::GoodTillCancel, Side::Buy);
@@ -133,7 +147,8 @@ TEST_F(PassiveOrderbookTest, OneBidOnEmptyBook) {
     EXPECT_EQ(actualLevelState, expectedLevelState);
 }
 
-TEST_F(PassiveOrderbookTest, OneAskOnEmptyBook) {
+TEST_F(PassiveOrderbookTest, OneAskOnEmptyBook)
+{
     price_t price = defaultPrice;
     quantity_t quantity = defaultQuantity;
     auto orderId = addRestingOrder(quantity, price, OrderType::GoodTillCancel, Side::Sell);
@@ -152,7 +167,8 @@ TEST_F(PassiveOrderbookTest, OneAskOnEmptyBook) {
     EXPECT_EQ(expectedLevelState, orderbook.fullDepthAsk().front());
 }
 
-TEST_F(PassiveOrderbookTest, FIFOOnTheSameLevel) {
+TEST_F(PassiveOrderbookTest, FIFOOnTheSameLevel)
+{
     price_t price = defaultPrice;
     quantity_t quantity = defaultQuantity;
 
@@ -186,7 +202,8 @@ TEST_F(PassiveOrderbookTest, FIFOOnTheSameLevel) {
     EXPECT_EQ(expectedLevelState, levels.front());
 }
 
-TEST_F(PassiveOrderbookTest, BookStateWithMultipleOrders) {
+TEST_F(PassiveOrderbookTest, BookStateWithMultipleOrders)
+{
     price_t price1 = defaultPrice;
     price_t price2 = defaultPrice + 1;
     price_t price3 = defaultPrice + 2;
@@ -224,7 +241,8 @@ TEST_F(PassiveOrderbookTest, BookStateWithMultipleOrders) {
     EXPECT_EQ(expLevel4, askDepth[1]);
 }
 
-TEST_F(PassiveOrderbookTest, CancelExistentBidOrder) {
+TEST_F(PassiveOrderbookTest, CancelExistentBidOrder)
+{
     price_t price = defaultPrice;
     quantity_t q = defaultQuantity;
     auto orderId = addRestingOrder(q, price, OrderType::GoodTillCancel, Side::Buy);
@@ -254,7 +272,8 @@ TEST_F(PassiveOrderbookTest, CancelExistentBidOrder) {
     EXPECT_FALSE(orderbook.bestBid().has_value());
 }
 
-TEST_F(PassiveOrderbookTest, CancelExistentAskOrder) {
+TEST_F(PassiveOrderbookTest, CancelExistentAskOrder)
+{
     price_t price = defaultPrice;
     quantity_t q = defaultQuantity;
     auto orderId = addRestingOrder(q, price, OrderType::GoodTillCancel, Side::Sell);
@@ -284,13 +303,15 @@ TEST_F(PassiveOrderbookTest, CancelExistentAskOrder) {
     EXPECT_FALSE(orderbook.bestBid().has_value());
 }
 
-TEST_F(PassiveOrderbookTest, CancelNonExistentOrder) {
+TEST_F(PassiveOrderbookTest, CancelNonExistentOrder)
+{
     ASSERT_TRUE(orderbook.fullDepthAsk().empty());
     ASSERT_TRUE(orderbook.fullDepthBid().empty());
     EXPECT_THROW(orderbook.cancelOrder(100), std::out_of_range);
 }
 
-TEST_F(PassiveOrderbookTest, CancelOrderWhichIsNotTheLastAtLevel) {
+TEST_F(PassiveOrderbookTest, CancelOrderWhichIsNotTheLastAtLevel)
+{
     price_t price = defaultPrice;
     quantity_t q1 = defaultQuantity;
     quantity_t q2 = defaultQuantity + 8;
@@ -324,7 +345,8 @@ TEST_F(PassiveOrderbookTest, CancelOrderWhichIsNotTheLastAtLevel) {
     EXPECT_EQ(bidDepth[0], expLevel);
 }
 
-TEST_F(PassiveOrderbookTest, ModifyQuantityUp) {
+TEST_F(PassiveOrderbookTest, ModifyQuantityUp)
+{
     price_t price = defaultPrice;
     quantity_t q = defaultQuantity + 10;
 
@@ -357,7 +379,8 @@ TEST_F(PassiveOrderbookTest, ModifyQuantityUp) {
     EXPECT_EQ(bidDepth[0], expLevel);
 }
 
-TEST_F(PassiveOrderbookTest, ModifyQuantityDown) {
+TEST_F(PassiveOrderbookTest, ModifyQuantityDown)
+{
     price_t price = defaultPrice;
     quantity_t q = defaultQuantity + 10;
 
@@ -390,7 +413,8 @@ TEST_F(PassiveOrderbookTest, ModifyQuantityDown) {
     EXPECT_EQ(bidDepth[0], expLevel);
 }
 
-TEST_F(PassiveOrderbookTest, ModifyPriceMovesToDifferentLevel) {
+TEST_F(PassiveOrderbookTest, ModifyPriceMovesToDifferentLevel)
+{
     price_t before = defaultPrice;
     price_t after = defaultPrice * 2;
     quantity_t q = defaultQuantity;
@@ -421,7 +445,8 @@ TEST_F(PassiveOrderbookTest, ModifyPriceMovesToDifferentLevel) {
     EXPECT_EQ(bidDepth[0], expLevel);
 }
 
-TEST_F(PassiveOrderbookTest, ModifyPriceStaysAtSameLevel) {
+TEST_F(PassiveOrderbookTest, ModifyPriceStaysAtSameLevel)
+{
     // Before and after are equal on purpose
     price_t before = defaultPrice;
     price_t after = defaultPrice;
@@ -452,7 +477,8 @@ TEST_F(PassiveOrderbookTest, ModifyPriceStaysAtSameLevel) {
     EXPECT_EQ(bidDepth[0], expLevel);
 }
 
-TEST_F(PassiveOrderbookTest, LimitOrderFullyFilledWithoutResting) {
+TEST_F(PassiveOrderbookTest, LimitOrderFullyFilledWithoutResting)
+{
     price_t price = defaultPrice;
     quantity_t q = defaultQuantity;
 
@@ -475,7 +501,8 @@ TEST_F(PassiveOrderbookTest, LimitOrderFullyFilledWithoutResting) {
     EXPECT_FALSE(orderbook.bestAsk().has_value());
 }
 
-TEST_F(PassiveOrderbookTest, LimitOrderDoesNotTradeAtWorsePriceThanLimit) {
+TEST_F(PassiveOrderbookTest, LimitOrderDoesNotTradeAtWorsePriceThanLimit)
+{
     quantity_t q = defaultQuantity;
 
     // Price is in interval [1, 2defaultPrice]
@@ -498,7 +525,7 @@ TEST_F(PassiveOrderbookTest, LimitOrderDoesNotTradeAtWorsePriceThanLimit) {
     price_t prevPrice = 0;
     for (const auto& trade : trades) {
         EXPECT_TRUE(trade.price >= 1 && trade.price <= defaultPrice);
-        EXPECT_TRUE(prevPrice < trade.price);  // Best prices trade first
+        EXPECT_TRUE(prevPrice < trade.price); // Best prices trade first
         prevPrice = trade.price;
     }
 }

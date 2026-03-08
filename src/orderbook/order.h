@@ -1,18 +1,20 @@
 #pragma once
 
-#include <list>
 #include "types.h"
+#include <list>
 
-class Order {
+class Order
+{
 public:
     Order(orderId_t orderid, quantity_t quantity, price_t price, OrderType type, Side side, microsec_t opentime)
-        : orderid_{orderid},
-          initialQuantity_{quantity},
-          remainingQuantity_{quantity},
-          price_{price},
-          type_{type},
-          side_{side},
-          opentime_{opentime} {
+        : orderid_{orderid}
+        , initialQuantity_{quantity}
+        , remainingQuantity_{quantity}
+        , price_{price}
+        , type_{type}
+        , side_{side}
+        , opentime_{opentime}
+    {
         if (quantity == 0)
             throw std::invalid_argument("quantity must be larger than 0");
     }
@@ -25,9 +27,10 @@ public:
     Side getSide() const { return side_; }
     microsec_t getOpenTime() const { return opentime_; }
 
-    quantity_t getFilled() const { return initialQuantity_ - remainingQuantity_; };
+    quantity_t getFilled() const { return initialQuantity_ - remainingQuantity_; }
     bool isFullyFilled() const { return remainingQuantity_ == 0; }
-    void fill(quantity_t quantity) {
+    void fill(quantity_t quantity)
+    {
         if (quantity > remainingQuantity_)
             throw std::invalid_argument("cant fill more than the remaining quantity");
         remainingQuantity_ -= quantity;

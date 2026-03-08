@@ -1,45 +1,52 @@
+#include "SPSCQueue.h"
 #include <gtest/gtest.h>
 #include <type_traits>
-#include "SPSCQueue.h"
 
 extern "C" {
-void __ubsan_on_report() {
+void __ubsan_on_report()
+{
     FAIL() << "Encountered an undefined behavior sanitizer error";
 }
-void __asan_on_error() {
+void __asan_on_error()
+{
     FAIL() << "Encountered an address sanitizer error";
 }
-void __tsan_on_report() {
+void __tsan_on_report()
+{
     FAIL() << "Encountered a thread sanitizer error";
 }
-}  // extern "C"
+} // extern "C"
 
 using testType = unsigned int;
-class FifoTest : public testing::Test {
+class FifoTest : public testing::Test
+{
 public:
     size_t cap = 4;
     SPSCQueue<testType> fifo{cap};
 };
 
-TEST_F(FifoTest, properties) {
-    EXPECT_FALSE(std::is_default_constructible_v<SPSCQueue<testType> >);
+TEST_F(FifoTest, properties)
+{
+    EXPECT_FALSE(std::is_default_constructible_v<SPSCQueue<testType>>);
     EXPECT_TRUE((std::is_constructible_v<SPSCQueue<testType>, unsigned long>));
-    EXPECT_TRUE((std::is_constructible_v<SPSCQueue<testType>, unsigned long, std::allocator<testType> >));
-    EXPECT_FALSE(std::is_copy_constructible_v<SPSCQueue<testType> >);
-    EXPECT_FALSE(std::is_move_constructible_v<SPSCQueue<testType> >);
-    EXPECT_FALSE(std::is_copy_assignable_v<SPSCQueue<testType> >);
-    EXPECT_FALSE(std::is_move_assignable_v<SPSCQueue<testType> >);
-    EXPECT_TRUE(std::is_destructible_v<SPSCQueue<testType> >);
+    EXPECT_TRUE((std::is_constructible_v<SPSCQueue<testType>, unsigned long, std::allocator<testType>>));
+    EXPECT_FALSE(std::is_copy_constructible_v<SPSCQueue<testType>>);
+    EXPECT_FALSE(std::is_move_constructible_v<SPSCQueue<testType>>);
+    EXPECT_FALSE(std::is_copy_assignable_v<SPSCQueue<testType>>);
+    EXPECT_FALSE(std::is_move_assignable_v<SPSCQueue<testType>>);
+    EXPECT_TRUE(std::is_destructible_v<SPSCQueue<testType>>);
 }
 
-TEST_F(FifoTest, initialState) {
+TEST_F(FifoTest, initialState)
+{
     EXPECT_EQ(4u, fifo.capacity());
     EXPECT_EQ(0, fifo.size());
     EXPECT_TRUE(fifo.empty());
     EXPECT_FALSE(fifo.full());
 }
 
-TEST_F(FifoTest, push) {
+TEST_F(FifoTest, push)
+{
     ASSERT_EQ(4u, fifo.capacity());
 
     EXPECT_TRUE(fifo.push(42));
@@ -68,13 +75,13 @@ TEST_F(FifoTest, push) {
     EXPECT_TRUE(fifo.full());
 }
 
-TEST_F(FifoTest, pop) {
+TEST_F(FifoTest, pop)
+{
     auto value = testType{};
     EXPECT_FALSE(fifo.pop(value));
 
-    for (auto i = 0u; i < fifo.capacity(); ++i) {
+    for (auto i = 0u; i < fifo.capacity(); ++i)
         fifo.push(42 + i);
-    }
 
     for (auto i = 0u; i < fifo.capacity(); ++i) {
         EXPECT_EQ(fifo.capacity() - i, fifo.size());
@@ -86,7 +93,8 @@ TEST_F(FifoTest, pop) {
     EXPECT_FALSE(fifo.pop(value));
 }
 
-TEST_F(FifoTest, popFullFifo) {
+TEST_F(FifoTest, popFullFifo)
+{
     auto value = testType{};
     EXPECT_FALSE(fifo.pop(value));
 
@@ -108,7 +116,8 @@ TEST_F(FifoTest, popFullFifo) {
     }
 }
 
-TEST_F(FifoTest, popEmpty) {
+TEST_F(FifoTest, popEmpty)
+{
     auto value = testType{};
     EXPECT_FALSE(fifo.pop(value));
 
@@ -123,7 +132,8 @@ TEST_F(FifoTest, popEmpty) {
     EXPECT_FALSE(fifo.pop(value));
 }
 
-TEST_F(FifoTest, wrap) {
+TEST_F(FifoTest, wrap)
+{
     auto value = testType{};
     for (auto i = 0u; i < fifo.capacity() * 2 + 1; ++i) {
         fifo.push(42 + i);
@@ -138,15 +148,15 @@ TEST_F(FifoTest, wrap) {
     }
 }
 
-TEST_F(FifoTest, threadSafety) {
+TEST_F(FifoTest, threadSafety)
+{
     size_t size = 10'000;
     SPSCQueue<testType> q{size};
     ASSERT_EQ(q.capacity(), size);
 
     std::thread producer([&q]() {
-        for (auto i = 0; i < q.capacity(); ++i) {
+        for (auto i = 0; i < q.capacity(); ++i)
             q.push(i);
-        }
     });
 
     std::thread consumer([&q]() {
@@ -154,9 +164,8 @@ TEST_F(FifoTest, threadSafety) {
         auto val = 0u;
 
         while (removed < q.capacity()) {
-            while (q.pop(val)) {
+            while (q.pop(val))
                 EXPECT_EQ(val, removed++);
-            }
             usleep(100);
         }
     });

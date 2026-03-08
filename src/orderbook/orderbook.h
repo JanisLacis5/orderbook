@@ -1,13 +1,13 @@
 #pragma once
 
-#include <functional>
-#include <map>
-#include <optional>
-#include <unordered_map>
 #include "order.h"
 #include "trade.h"
 #include "types.h"
 #include "usings.h"
+#include <functional>
+#include <map>
+#include <optional>
+#include <unordered_map>
 
 struct LevelView {
     price_t price;
@@ -15,15 +15,16 @@ struct LevelView {
     uint32_t orderCnt;
 };
 
-class Orderbook {
+class Orderbook
+{
 public:
     std::pair<orderId_t, trades_t> addOrder(quantity_t quantity, price_t price, OrderType type, Side side);
     void cancelOrder(orderId_t orderId);
     std::pair<orderId_t, trades_t> modifyOrder(orderId_t orderId, ModifyOrder modifications);
     std::optional<price_t> bestAsk() const;
     std::optional<price_t> bestBid() const;
-    std::vector<LevelView> fullDepthAsk() const { return fullDepth(Side::Sell); };
-    std::vector<LevelView> fullDepthBid() const { return fullDepth(Side::Buy); };
+    std::vector<LevelView> fullDepthAsk() const { return fullDepth(Side::Sell); }
+    std::vector<LevelView> fullDepthBid() const { return fullDepth(Side::Buy); }
 
 private:
     struct OrderInfo {
@@ -35,8 +36,8 @@ private:
         uint32_t orderCnt = 0;
     };
 
-    std::map<price_t, orderPtrs_t, std::less<price_t> > ask_;
-    std::map<price_t, orderPtrs_t, std::greater<price_t> > bid_;
+    std::map<price_t, orderPtrs_t, std::less<price_t>> ask_;
+    std::map<price_t, orderPtrs_t, std::greater<price_t>> bid_;
     std::map<price_t, LevelData> levelData_;
     std::unordered_map<orderId_t, OrderInfo> orders_;
     orderId_t lastOrderId_{0};

@@ -1,11 +1,12 @@
 #include "orderbook.h"
-#include <optional>
-#include <stdexcept>
 #include "order.h"
 #include "usings.h"
+#include <optional>
+#include <stdexcept>
 
 // PRIVATE FUNCTION IMPLEMENTATIONS
-trades_t Orderbook::matchOrder(orderPtr_t order) {
+trades_t Orderbook::matchOrder(orderPtr_t order)
+{
     Side side = order->getSide();
     orderId_t orderId = order->getOrderId();
     trades_t trades;
@@ -55,19 +56,20 @@ trades_t Orderbook::matchOrder(orderPtr_t order) {
         (order->getType() == OrderType::GoodTillCancel || order->getType() == OrderType::GoodTillEOD)) {
         addAtOrderPrice(order);
         processAddedOrder(order);
-    }
-    else if (order->isFullyFilled())
+    } else if (order->isFullyFilled())
         orders_.erase(orderId);
 
     return trades;
 }
 
-microsec_t Orderbook::getCurrTime() const {
+microsec_t Orderbook::getCurrTime() const
+{
     auto time = std::chrono::system_clock::now().time_since_epoch();
     return std::chrono::duration_cast<microsec_t>(time);
 }
 
-void Orderbook::processAddedOrder(orderPtr_t order) {
+void Orderbook::processAddedOrder(orderPtr_t order)
+{
     orderId_t orderId = order->getOrderId();
 
     orders_[orderId].order_ = order;
@@ -80,7 +82,8 @@ void Orderbook::processAddedOrder(orderPtr_t order) {
     levelData_[order->getPrice()].orderCnt++;
 }
 
-bool Orderbook::canBeFullyFilled(price_t price, quantity_t quantity, Side side) const {
+bool Orderbook::canBeFullyFilled(price_t price, quantity_t quantity, Side side) const
+{
     if (quantity <= 0)
         throw std::logic_error("Invalid quantity");
     if (!doesCrossSpread(price, side))
@@ -92,8 +95,7 @@ bool Orderbook::canBeFullyFilled(price_t price, quantity_t quantity, Side side) 
     if (side == Side::Sell) {
         const auto& [bidPrice, _] = *bid_.begin();
         treshold = bidPrice;
-    }
-    else if (side == Side::Buy) {
+    } else if (side == Side::Buy) {
         const auto& [askPrice, _] = *ask_.begin();
         treshold = askPrice;
     }
@@ -111,26 +113,26 @@ bool Orderbook::canBeFullyFilled(price_t price, quantity_t quantity, Side side) 
     return false;
 }
 
-bool Orderbook::doesCrossSpread(price_t price, Side side) const {
+bool Orderbook::doesCrossSpread(price_t price, Side side) const
+{
     if (side == Side::Sell) {
         if (bid_.empty())
             return false;
 
         const auto& [bestBid, _] = *bid_.begin();
         return price <= bestBid;
-    }
-    else if (side == Side::Buy) {
+    } else if (side == Side::Buy) {
         if (ask_.empty())
             return false;
 
         const auto& [bestAsk, _] = *ask_.begin();
         return price >= bestAsk;
-    }
-    else
+    } else
         throw std::logic_error("Invalid side");
 }
 
-void Orderbook::addAtOrderPrice(orderPtr_t order) {
+void Orderbook::addAtOrderPrice(orderPtr_t order)
+{
     if (order->getSide() == Side::Sell)
         ask_[order->getPrice()].push_back(order);
     else if (order->getSide() == Side::Buy)
@@ -139,7 +141,8 @@ void Orderbook::addAtOrderPrice(orderPtr_t order) {
         throw std::logic_error("Invalid side");
 }
 
-std::vector<LevelView> Orderbook::fullDepth(Side side) const {
+std::vector<LevelView> Orderbook::fullDepth(Side side) const
+{
     bool isAsk = side == Side::Sell;
     std::vector<LevelView> levels;
     levels.reserve((isAsk ? ask_.size() : bid_.size()));
@@ -162,20 +165,21 @@ std::vector<LevelView> Orderbook::fullDepth(Side side) const {
     return levels;
 }
 
-orderPtr_t Orderbook::newOrder(quantity_t quantity, price_t price, OrderType type, Side side) {
+orderPtr_t Orderbook::newOrder(quantity_t quantity, price_t price, OrderType type, Side side)
+{
     lastOrderId_++;
     return std::make_shared<Order>(lastOrderId_, quantity, price, type, side, getCurrTime());
 }
 
 // PUBLIC FUNCTION IMPLEMENTATIONS
-std::pair<orderId_t, trades_t> Orderbook::addOrder(quantity_t quantity, price_t price, OrderType type, Side side) {
+std::pair<orderId_t, trades_t> Orderbook::addOrder(quantity_t quantity, price_t price, OrderType type, Side side)
+{
     orderPtr_t order = newOrder(quantity, price, type, side);
 
     if (type == OrderType::FillAndKill) {
         if (!doesCrossSpread(order->getPrice(), order->getSide()))
             return {};
-    }
-    else if (type == OrderType::FillOrKill) {
+    } else if (type == OrderType::FillOrKill) {
         if (!canBeFullyFilled(order->getPrice(), order->getInitialQuantity(), order->getSide()))
             return {};
     }
@@ -184,10 +188,10 @@ std::pair<orderId_t, trades_t> Orderbook::addOrder(quantity_t quantity, price_t 
 
 #include <iostream>
 
-void Orderbook::cancelOrder(orderId_t orderId) {
-    for (auto& orderInfo : orders_) {
+void Orderbook::cancelOrder(orderId_t orderId)
+{
+    for (auto& orderInfo : orders_)
         std::cout << orderInfo.second.order_->getOrderId() << std::endl;
-    }
     OrderInfo orderInfo = orders_.at(orderId);
     orders_.erase(orderId);
 
@@ -198,8 +202,7 @@ void Orderbook::cancelOrder(orderId_t orderId) {
         ask_[price].erase(orderInfo.location_);
         if (ask_[price].empty())
             ask_.erase(price);
-    }
-    else if (order->getSide() == Side::Buy) {
+    } else if (order->getSide() == Side::Buy) {
         bid_[price].erase(orderInfo.location_);
         if (bid_[price].empty())
             bid_.erase(price);
@@ -211,7 +214,8 @@ void Orderbook::cancelOrder(orderId_t orderId) {
         levelData_.erase(price);
 }
 
-std::pair<orderId_t, trades_t> Orderbook::modifyOrder(orderId_t orderId, ModifyOrder modifications) {
+std::pair<orderId_t, trades_t> Orderbook::modifyOrder(orderId_t orderId, ModifyOrder modifications)
+{
     orderPtr_t oldOrder = orders_.at(orderId).order_;
 
     quantity_t quantity =
@@ -224,7 +228,8 @@ std::pair<orderId_t, trades_t> Orderbook::modifyOrder(orderId_t orderId, ModifyO
     return addOrder(quantity, price, type, side);
 }
 
-std::optional<price_t> Orderbook::bestAsk() const {
+std::optional<price_t> Orderbook::bestAsk() const
+{
     if (ask_.empty())
         return {};
 
@@ -232,7 +237,8 @@ std::optional<price_t> Orderbook::bestAsk() const {
     return price;
 }
 
-std::optional<price_t> Orderbook::bestBid() const {
+std::optional<price_t> Orderbook::bestBid() const
+{
     if (bid_.empty())
         return {};
 

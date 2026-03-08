@@ -6,18 +6,18 @@
 #include "apiConstants.h"
 #include "usings.h"
 
-class User {
+class User
+{
 public:
     template <typename IdValidationFunction>
     User(int serverSckFd, IdValidationFunction validId)
-        : socket_{serverSckFd} {
-
+        : socket_{serverSckFd}
+    {
         id = generateId();
 
         // Extremely low probability of happening
-        while (!validId(id)) {
+        while (!validId(id))
             id = generateId();
-        }
     }
 
     ~User() {}
@@ -28,10 +28,9 @@ public:
     User& operator=(User&&) = delete;
 
     userId_t id;
-    int sckFd() const { return socket_.fd(); };
+    int sckFd() const { return socket_.fd(); }
 
-    template <typename EpollSet, typename EpollUnset>
-    bool send(EpollSet&& set, EpollUnset&& unset);
+    template <typename EpollSet, typename EpollUnset> bool send(EpollSet&& set, EpollUnset&& unset);
     bool receive();
 
 private:
@@ -52,8 +51,8 @@ private:
     userId_t generateId();
 };
 
-template <typename EpollSet, typename EpollUnset>
-bool User::send(EpollSet&& set, EpollUnset&& unset) {
+template <typename EpollSet, typename EpollUnset> bool User::send(EpollSet&& set, EpollUnset&& unset)
+{
     auto toSend = [&] { return outSize_ - sent_; };
     auto bufPtr = [&] { return outBuffer_.data() + sent_; };
 

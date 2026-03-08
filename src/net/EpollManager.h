@@ -1,19 +1,21 @@
 #pragma once
 
+#include "Logger.h"
+#include <array>
 #include <sys/epoll.h>
 #include <unistd.h>
-#include <array>
-#include "Logger.h"
 
 constexpr int MAX_EVENTS = 100;
 
-class EpollManager {
+class EpollManager
+{
 public:
     EpollManager();
-    ~EpollManager() {
+    ~EpollManager()
+    {
         if (epollfd_ > 0)
             ::close(epollfd_);
-    };
+    }
 
     EpollManager(const EpollManager& other) = delete;
     EpollManager(EpollManager&& other) = delete;

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
 #include "usings.h"
+#include <vector>
 
 struct Trade {
     orderId_t seller;
@@ -12,6 +12,7 @@ struct Trade {
 
 using trades_t = std::vector<Trade>;
 
-inline Trade newTrade(orderId_t buyer, orderId_t seller, quantity_t quantity, price_t price) {
+inline Trade newTrade(orderId_t buyer, orderId_t seller, quantity_t quantity, price_t price)
+{
     return {.seller = seller, .buyer = buyer, .quantity = quantity, .price = price};
 }

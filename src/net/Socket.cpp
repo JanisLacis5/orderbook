@@ -1,11 +1,12 @@
 #include "Socket.h"
+#include <cerrno>
 #include <fcntl.h>
 #include <sys/socket.h>
-#include <cerrno>
 #include <system_error>
 
 // Opening a new socket
-Socket::Socket() {
+Socket::Socket()
+{
     fd_ = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
     if (fd_ == -1) {
         logger_.logerrno("[open_sck]: socket");
@@ -20,7 +21,8 @@ Socket::Socket() {
 }
 
 // Accepting a socket / connection
-Socket::Socket(int fd) {
+Socket::Socket(int fd)
+{
     sockaddr_in local{};
     socklen_t addrlen = sizeof(local);
 
@@ -33,7 +35,8 @@ Socket::Socket(int fd) {
     ::fcntl(fd_, F_SETFL, ::fcntl(fd_, F_GETFL, 0) | O_NONBLOCK);
 }
 
-bool Socket::bind(in_addr_t ip, int port) {
+bool Socket::bind(in_addr_t ip, int port)
+{
     sockaddr_in addr{.sin_family = AF_INET, .sin_port = htons(port), .sin_addr = {.s_addr = ip}};
 
     if (::bind(fd_, (sockaddr*)&addr, sizeof(addr)) == -1) {
@@ -45,11 +48,12 @@ bool Socket::bind(in_addr_t ip, int port) {
 }
 
 // TODO: maybe we should unlisten the previous listenings this socket had
-bool Socket::listen(int backlog) {
+bool Socket::listen(int backlog)
+{
     if (::listen(fd_, backlog) == -1) {
         logger_.logerrno("listen");
         return false;
     }
 
     return true;
-};
+}

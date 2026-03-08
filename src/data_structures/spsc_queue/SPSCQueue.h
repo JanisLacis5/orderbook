@@ -7,44 +7,49 @@
 
 constexpr size_t cacheline_size = 64;
 
-template <typename T, typename Alloc = std::allocator<T> >
-class SPSCQueue : private Alloc {
+template <typename T, typename Alloc = std::allocator<T>> class SPSCQueue : private Alloc
+{
 public:
     using value_type = T;
     using traits = std::allocator_traits<Alloc>;
     explicit SPSCQueue(size_t capacity, Alloc allocator = Alloc{})
-        : allocator_{allocator},
-          capacity_{capacity},
-          buffer_{traits::allocate(allocator_, capacity)} {
+        : allocator_{allocator}
+        , capacity_{capacity}
+        , buffer_{traits::allocate(allocator_, capacity)}
+    {
         if (capacity == 0)
             throw std::logic_error("Capacity of the queue has to be non-zero");
-    };
+    }
 
-    ~SPSCQueue() {
+    ~SPSCQueue()
+    {
         while (!empty())
             pop_discard();
         traits::deallocate(allocator_, buffer_, capacity_);
-    };
+    }
 
     SPSCQueue& operator=(const SPSCQueue&) = delete;
     SPSCQueue(const SPSCQueue&) = delete;
 
-    size_t size() const {
+    size_t size() const
+    {
         auto popPtr = popPtr_.load(std::memory_order_relaxed);
         auto pushPtr = pushPtr_.load(std::memory_order_relaxed);
 
         assert(popPtr <= pushPtr);
         return pushPtr - popPtr;
     }
-    bool empty() const { return size() == 0; };
-    bool full() const { return size() == capacity_; };
-    T& front() {
+    bool empty() const { return size() == 0; }
+    bool full() const { return size() == capacity_; }
+    T& front()
+    {
         auto popPtr = popPtr_.load(std::memory_order_relaxed);
         return buffer_[popPtr % capacity_];
     }
-    size_t capacity() const { return capacity_; };
+    size_t capacity() const { return capacity_; }
 
-    bool push(const T& value) {
+    bool push(const T& value)
+    {
         auto pushPtr = pushPtr_.load(std::memory_order_acquire);
         if (full_(pushPtr, popPtrCache_)) {
             popPtrCache_ = popPtr_.load(std::memory_order_acquire);
@@ -56,9 +61,10 @@ public:
         pushPtr_.fetch_add(1, std::memory_order_release);
 
         return true;
-    };
+    }
 
-    bool pop(T& out) {
+    bool pop(T& out)
+    {
         auto popPtr = popPtr_.load(std::memory_order_acquire);
         if (empty_(pushPtrCache_, popPtr)) {
             pushPtrCache_ = pushPtr_.load(std::memory_order_acquire);
@@ -71,9 +77,10 @@ public:
         popPtr_.fetch_add(1, std::memory_order_release);
 
         return true;
-    };
+    }
 
-    bool pop_discard() {
+    bool pop_discard()
+    {
         auto popPtr = popPtr_.load(std::memory_order_acquire);
         if (empty_(pushPtrCache_, popPtr)) {
             pushPtrCache_ = pushPtr_.load(std::memory_order_acquire);
@@ -96,6 +103,6 @@ private:
     size_t capacity_;
     T* buffer_{nullptr};
 
-    bool empty_(size_t pushp, size_t popp) const { return pushp == popp; };
-    bool full_(size_t pushp, size_t popp) const { return pushp - popp == capacity_; };
+    bool empty_(size_t pushp, size_t popp) const { return pushp == popp; }
+    bool full_(size_t pushp, size_t popp) const { return pushp - popp == capacity_; }
 };

@@ -1,5 +1,5 @@
 AccessModifierOffset: -4
-BasedOnStyle: Google
+BasedOnStyle: LLVM 
 IndentWidth: 4
 UseTab: Never
 TabWidth: 4
@@ -11,10 +11,8 @@ AllowShortBlocksOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
-BreakBeforeBraces: Custom
-BraceWrapping:
-  BeforeElse: true
-  BeforeCatch: true
+BreakBeforeBraces: Linux 
+BreakConstructorInitializers: BeforeComma
 ColumnLimit: 120 
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 ConstructorInitializerIndentWidth: 4
@@ -33,5 +31,7 @@ SpaceBeforeParens: ControlStatements
 SpaceBeforeRangeBasedForLoopColon: true
 SpaceInEmptyParentheses: false
 Cpp11BracedListStyle: true
-BreakConstructorInitializers: BeforeColon
 PackConstructorInitializers: Never
+InsertBraces: false
+RemoveBracesLLVM: true
+RemoveSemicolon: true

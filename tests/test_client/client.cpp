@@ -7,7 +7,8 @@
 #define SERVER_PORT 8000
 #define BUF_SIZE 1024
 
-int main() {
+int main()
+{
     char buffer[BUF_SIZE];
 
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);

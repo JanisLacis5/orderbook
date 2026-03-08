@@ -1,12 +1,13 @@
-#include <gtest/gtest.h>
-#include <stdexcept>
 #include "order.h"
 #include "types.h"
 #include "usings.h"
+#include <gtest/gtest.h>
+#include <stdexcept>
 
 constexpr microsec_t NOW = microsec_t{67};
 
-class OrderTest : public testing::Test {
+class OrderTest : public testing::Test
+{
 protected:
     orderId_t orderid = 1;
     quantity_t quantity = 100;
@@ -16,12 +17,14 @@ protected:
     Order order = Order(orderid, quantity, price, type, side, NOW);
 };
 
-TEST_F(OrderTest, ConstructorInvalidQuantity) {
+TEST_F(OrderTest, ConstructorInvalidQuantity)
+{
     EXPECT_NO_THROW(Order(orderid, quantity, price, type, side, NOW));
     EXPECT_THROW(Order(orderid, 0, price, type, side, NOW), std::invalid_argument);
 }
 
-TEST_F(OrderTest, Constructor) {
+TEST_F(OrderTest, Constructor)
+{
     EXPECT_EQ(order.getOrderId(), 1);
     EXPECT_EQ(order.getInitialQuantity(), 100);
     EXPECT_EQ(order.getRemainingQuantity(), 100);
@@ -31,13 +34,15 @@ TEST_F(OrderTest, Constructor) {
     EXPECT_EQ(order.getOpenTime(), NOW);
 }
 
-TEST_F(OrderTest, InitialState) {
+TEST_F(OrderTest, InitialState)
+{
     EXPECT_FALSE(order.isFullyFilled());
     EXPECT_EQ(order.getFilled(), 0);
     EXPECT_EQ(order.getRemainingQuantity(), order.getInitialQuantity());
 }
 
-TEST_F(OrderTest, BadFillCall) {
+TEST_F(OrderTest, BadFillCall)
+{
     EXPECT_THROW(order.fill(quantity + 1), std::invalid_argument);
 
     // Check if throw was before anything was changed
@@ -46,7 +51,8 @@ TEST_F(OrderTest, BadFillCall) {
     EXPECT_FALSE(order.isFullyFilled());
 }
 
-TEST_F(OrderTest, FillFull) {
+TEST_F(OrderTest, FillFull)
+{
     order.fill(quantity);
 
     EXPECT_EQ(order.getRemainingQuantity(), 0);
@@ -54,7 +60,8 @@ TEST_F(OrderTest, FillFull) {
     EXPECT_TRUE(order.isFullyFilled());
 }
 
-TEST_F(OrderTest, PartialFill) {
+TEST_F(OrderTest, PartialFill)
+{
     order.fill(quantity / 2);
 
     EXPECT_EQ(order.getRemainingQuantity(), quantity - quantity / 2);
@@ -62,7 +69,8 @@ TEST_F(OrderTest, PartialFill) {
     EXPECT_FALSE(order.isFullyFilled());
 }
 
-TEST_F(OrderTest, MultipleFillsNotFull) {
+TEST_F(OrderTest, MultipleFillsNotFull)
+{
     quantity_t q1 = quantity / 2;
     quantity_t q2 = quantity / 3;
 
@@ -77,7 +85,8 @@ TEST_F(OrderTest, MultipleFillsNotFull) {
     EXPECT_FALSE(order.isFullyFilled());
 }
 
-TEST_F(OrderTest, MultipleFillsFull) {
+TEST_F(OrderTest, MultipleFillsFull)
+{
     quantity_t q1 = quantity / 3;
     quantity_t q2 = quantity - q1;
 

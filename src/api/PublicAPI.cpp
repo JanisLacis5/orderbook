@@ -1,17 +1,18 @@
 #include "PublicAPI.h"
-#include <fcntl.h>
-#include <netinet/in.h>
-#include <sys/epoll.h>
-#include <sys/socket.h>
 #include <algorithm>
 #include <array>
 #include <bit>
 #include <cerrno>
 #include <cstring>
+#include <fcntl.h>
 #include <memory>
+#include <netinet/in.h>
 #include <stdexcept>
+#include <sys/epoll.h>
+#include <sys/socket.h>
 
-std::array<std::byte, MAX_RESPONSE_LEN> PublicAPI::createResBuf(API_STATUS_CODE status, std::span<std::byte> data) {
+std::array<std::byte, MAX_RESPONSE_LEN> PublicAPI::createResBuf(API_STATUS_CODE status, std::span<std::byte> data)
+{
     APIResponse hdr;
     hdr.payloadSize = data.size();
     switch (status) {
@@ -32,7 +33,7 @@ std::array<std::byte, MAX_RESPONSE_LEN> PublicAPI::createResBuf(API_STATUS_CODE 
     hdr.message.resize(HDR_MESSAGE_SIZE, '\0');
 
     uint32_t codeNetEnd = htonl(hdr.code);
-    auto codeBytes = std::bit_cast<std::array<std::byte, 4> >(codeNetEnd);
+    auto codeBytes = std::bit_cast<std::array<std::byte, 4>>(codeNetEnd);
 
     std::array<std::byte, MAX_RESPONSE_LEN> buf;
     std::copy(codeBytes.begin(), codeBytes.end(), buf.begin());
@@ -42,7 +43,8 @@ std::array<std::byte, MAX_RESPONSE_LEN> PublicAPI::createResBuf(API_STATUS_CODE 
     return buf;
 }
 
-int PublicAPI::acceptNewListener() {
+int PublicAPI::acceptNewListener()
+{
     auto user = std::make_unique<User>(listenSocket_.fd(), [&](userId_t uid) {
         return std::find_if(users_.begin(), users_.end(), [uid](const auto& user) { return user.second->id == uid; }) ==
                users_.end();
@@ -57,12 +59,14 @@ int PublicAPI::acceptNewListener() {
     return user->sckFd();
 }
 
-PublicAPI::PublicAPI() {
+PublicAPI::PublicAPI()
+{
     listenSocket_.bind(INADDR_ANY, 8000);
     listenSocket_.listen();
 }
 
-void PublicAPI::run() {
+void PublicAPI::run()
+{
     std::array<epoll_event, MAX_EVENTS> events;
     while (true) {
         int nfds = epollManager_.getEvents(events);
@@ -74,8 +78,7 @@ void PublicAPI::run() {
             if (incfd == listenSocket_.fd()) {
                 if (acceptNewListener() == -1)
                     continue;
-            }
-            else {
+            } else {
                 auto user = users_.find(incfd);
                 if (user == users_.end() || !user->second)
                     // TODO: send a response to user (500: internal error or something)
