@@ -3,8 +3,9 @@
 
 bool User::receive()
 {
-    while (received_ < MAX_BYTES_PER_HANDLE) {
-        auto n = ::read(socket_.fd(), inBuffer_.data() + received_, MAX_MESSAGE_LEN);
+    size_t received = 0;
+    while (received < MAX_BYTES_PER_HANDLE && inSize_ < MAX_MESSAGE_LEN) {
+        auto n = ::read(socket_.fd(), inBuffer_.data() + inSize_, MAX_MESSAGE_LEN);
 
         if (n == 0)
             break;
@@ -17,7 +18,7 @@ bool User::receive()
             return false;
         }
 
-        received_ += n;
+        inSize_ += n;
     }
 
     return true;

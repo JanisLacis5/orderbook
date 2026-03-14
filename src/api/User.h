@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Logger.h"
-#include "SPSCQueue.h"
+#include "Messager.h"
 #include "Socket.h"
 #include "apiConstants.h"
 #include "usings.h"
@@ -33,22 +33,21 @@ public:
     template <typename EpollSet, typename EpollUnset>
     bool send(EpollSet&& set, EpollUnset&& unset);
     bool receive();
-    
 
 private:
     using RawMessage = std::array<std::byte, MAX_MESSAGE_LEN>;
-    using MessageQueue_t = SPSCQueue<RawMessage>;
 
+    // in - incoming (order management, data request etc), out - outgoing (for the client, error message, data, etc)
     int sent_{0};
-    int received_{0};
     int inSize_{0};
     int outSize_{0};
     RawMessage inBuffer_;
+    std::vector<FormattedMessage> inFormatted_;
     RawMessage outBuffer_;
+    std::vector<FormattedMessage> outFormatted_;
 
     Logger logger_{"User"};
     Socket socket_;
-    MessageQueue_t mesQueue_{MESSAGE_QUEUE_SIZE};
 
     userId_t generateId();
 };
@@ -56,42 +55,42 @@ private:
 template <typename EpollSet, typename EpollUnset>
 bool User::send(EpollSet&& set, EpollUnset&& unset)
 {
-        auto toSend = [&] { return outSize_ - sent_; };
-        auto bufPtr = [&] { return outBuffer_.data() + sent_; };
+    auto toSend = [&] { return outSize_ - sent_; };
+    auto bufPtr = [&] { return outBuffer_.data() + sent_; };
 
-        if (!set(socket_.fd(), socket_.epollEvents))
-            return false;
+    if (!set(socket_.fd(), socket_.epollEvents))
+        return false;
 
-        auto n = ::send(socket_.fd(), bufPtr(), toSend(), 0);
-        if (n <= 0) {
-            logger_.logerrno("[sendRes]: send1");
-            return false;
-        }
-        sent_ += n;
+    auto n = ::send(socket_.fd(), bufPtr(), toSend(), 0);
+    if (n <= 0) {
+        logger_.logerrno("[sendRes]: send1");
+        return false;
+    }
+    sent_ += n;
 
-        while (toSend() > 0 && n > 0) {
-            n = ::send(socket_.fd(), bufPtr(), toSend(), 0);
+    while (toSend() > 0 && n > 0) {
+        n = ::send(socket_.fd(), bufPtr(), toSend(), 0);
 
-            if (n == 0)
+        if (n == 0)
+            break;
+
+        if (n < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
                 break;
 
-            if (n < 0) {
-                if (errno == EAGAIN || errno == EWOULDBLOCK)
-                    break;
-
-                perror("[sendRes]: send2");
-                return false;
-            }
-
-            sent_ += n;
+            perror("[sendRes]: send2");
+            return false;
         }
 
-        if (!toSend()) {
-            sent_ = 0;
-            outSize_ = 0;
-            if (!unset(socket_.fd(), socket_.epollEvents))
-                return false;
-        }
-
-        return true;
+        sent_ += n;
     }
+
+    if (!toSend()) {
+        sent_ = 0;
+        outSize_ = 0;
+        if (!unset(socket_.fd(), socket_.epollEvents))
+            return false;
+    }
+
+    return true;
+}
