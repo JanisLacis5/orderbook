@@ -40,9 +40,8 @@ public:
     }
     ring_buffer& operator=(ring_buffer&& other) noexcept
     {
-        while (!empty()) {
+        while (!empty())
             pop_back();
-        }
         traits::deallocate(allocator_, buffer_, capacity_);
 
         allocator_ = std::move(other.allocator_);
@@ -65,50 +64,55 @@ public:
     T& back() { return buffer_[tail_]; }
     const T& back() const { return buffer_[tail_]; }
 
-    bool consume_front(size_t n) {
-        if (n > size()) 
+    bool consume_front(size_t n)
+    {
+        if (n > size())
             return false;
 
-        while (n--) {
+        while (n--)
             if (!pop_front())
                 return false;
-        }
-        
+
         return true;
     }
-    bool consume_back(size_t n) {
-         if (n > size()) 
+    bool consume_back(size_t n)
+    {
+        if (n > size())
             return false;
 
-        while (n--) {
+        while (n--)
             if (!pop_back())
                 return false;
-        }
-        
+
         return true;
     }
 
-    bool push_back(const T& val) {
+    bool push_back(const T& val)
+    {
         if (full())
             return false;
 
-        std::construct_at(buffer_ + tail_, val);        
-        tail_++; tail_ %= capacity();
+        std::construct_at(buffer_ + tail_, val);
+        tail_++;
+        tail_ %= capacity();
         size_++;
 
         return true;
     }
-    bool push_back(T&& val) {
+    bool push_back(T&& val)
+    {
         if (full())
             return false;
 
-        std::construct_at(buffer_ + tail_, std::move(val));        
-        tail_++; tail_ %= capacity();
+        std::construct_at(buffer_ + tail_, std::move(val));
+        tail_++;
+        tail_ %= capacity();
         size_++;
 
         return true;
     }
-    bool pop_back(T& out) {
+    bool pop_back(T& out)
+    {
         if (empty())
             return false;
 
@@ -119,7 +123,8 @@ public:
 
         return true;
     }
-    std::optional<T> pop_back() {
+    std::optional<T> pop_back()
+    {
         std::optional<T> out{};
         if (!empty()) {
             tail_ = tail_ == 0 ? capacity() - 1 : tail_ - 1;
@@ -130,23 +135,27 @@ public:
         return out;
     }
 
-    bool pop_front(T& out) {
+    bool pop_front(T& out)
+    {
         if (empty())
             return false;
 
         out = buffer_[head_];
         std::destroy_at(buffer_ + head_);
-        head_++; head_ %= capacity();
+        head_++;
+        head_ %= capacity();
         size_--;
 
         return true;
     }
-    std::optional<T> pop_front() {
+    std::optional<T> pop_front()
+    {
         std::optional<T> out{};
         if (!empty()) {
             out = buffer_[head_];
             std::destroy_at(buffer_ + head_);
-            head_++; head_ %= capacity();
+            head_++;
+            head_ %= capacity();
             size_--;
         }
         return out;
@@ -165,7 +174,7 @@ public:
     {
         if (full())
             return {};
-            
+
         if (head_ < tail_)
             return {buffer_ + tail_, capacity() - tail_};
         return {buffer_ + tail_, head_ - tail_ - 1};
@@ -185,6 +194,6 @@ private:
     size_t capacity_;
     size_t size_{0};
     T* buffer_{nullptr};
-    size_t head_{0};  // head is the first valid element
-    size_t tail_{0};  // tail-1 is the last valid element
+    size_t head_{0}; // head is the first valid element
+    size_t tail_{0}; // tail-1 is the last valid element
 };

@@ -37,6 +37,5 @@ private:
     std::map<int, std::unique_ptr<User>> users_; // user socket fd : User*
 
     int acceptNewListener();
-    bool ask(); // TODO: ask user for 1 message, this will be done on the producer thread
     std::array<std::byte, MAX_RESPONSE_LEN> createResBuf(API_STATUS_CODE status, std::span<std::byte> data);
 };

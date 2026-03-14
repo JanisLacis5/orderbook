@@ -1,4 +1,6 @@
 #include "PublicAPI.h"
+#include "Consumer.h"
+#include "Producer.h"
 #include <algorithm>
 #include <array>
 #include <bit>
@@ -68,6 +70,9 @@ PublicAPI::PublicAPI()
 
 void PublicAPI::run()
 {
+    Producer producer{};
+    Consumer consumer{};
+
     std::array<epoll_event, MAX_EVENTS> events;
     while (true) {
         int nfds = epollManager_.getEvents(events);

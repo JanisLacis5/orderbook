@@ -2,6 +2,7 @@
 
 #include "Logger.h"
 #include "Messager.h"
+#include "SPSCQueue.h"
 #include "Socket.h"
 #include "apiConstants.h"
 #include "ring_buffer.h"
@@ -36,14 +37,15 @@ public:
     template <typename EpollSet, typename EpollUnset>
     bool send(EpollSet&& set, EpollUnset&& unset); // server -> client
     bool receive();                                // client -> server
+    std::optional<FormattedMessage> getQueueMessage();
 
 private:
     // in - incoming (order management, data request etc), out - outgoing (for the client, error message, data, etc)
-    ring_buffer<std::byte> inBuffer_;
-    std::vector<FormattedMessage> inFormatted_;
+    ring_buffer<std::byte> inBuffer_;   // pure bytes from the api
+    SPSCQueue<FormattedMessage> queue_; // Messager formatted for the producer
 
-    ring_buffer<std::byte> outBuffer_;
-    std::vector<FormattedMessage> outFormatted_;
+    ring_buffer<std::byte> outBuffer_;           // pure bytes from Messager for the output socket
+    std::vector<FormattedMessage> outFormatted_; // messages from the consumer thread
 
     Logger logger_{"User"};
     Socket socket_;

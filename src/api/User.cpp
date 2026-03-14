@@ -27,6 +27,14 @@ bool User::receive()
     return true;
 }
 
+std::optional<FormattedMessage> User::getQueueMessage()
+{
+    auto ret = queue_.front();
+    if (!queue_.pop_discard())
+        return std::optional<FormattedMessage>{};
+    return std::optional<FormattedMessage>{ret};
+}
+
 userId_t User::generateId()
 {
     auto now = std::chrono::system_clock::now();
