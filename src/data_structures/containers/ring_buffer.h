@@ -41,6 +41,7 @@ public:
     }
 
     [[nodiscard]] size_t size() const { return size_; }
+    [[nodiscard]] size_t capacity() const { return capacity_; }
     [[nodiscard]] bool empty() const { return size() == 0; }
     [[nodiscard]] bool full() const { return size() == capacity_; }
 
@@ -75,11 +76,9 @@ public:
 
     std::span<T> writable_contiguous()
     {
-        if (head_ < tail_) {
-            auto blockSize = tail_ - head_;
-            return {buffer_ + head_, blockSize};
-        }
-        return {buffer_, tail_};
+        if (head_ < tail_)
+            return {buffer_ + tail_, capacity() - tail_};
+        return {buffer_, head_};
     }
 
     bool commit_chunk_write(std::span<T> chunk, size_t n)
