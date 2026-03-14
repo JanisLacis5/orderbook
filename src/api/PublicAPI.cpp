@@ -4,6 +4,7 @@
 #include <bit>
 #include <cerrno>
 #include <cstring>
+#include <cassert>
 #include <fcntl.h>
 #include <memory>
 #include <netinet/in.h>
