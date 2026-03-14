@@ -5,6 +5,7 @@
 #include <optional>
 #include <span>
 #include <utility>
+#include <thread>
 
 template <typename T, typename Alloc = std::allocator<T>>
 class ring_buffer : private Alloc
@@ -60,10 +61,30 @@ public:
     T& back() { return buffer_[tail_]; }
     const T& back() const { return buffer_[tail_]; }
 
-    // TODO: implement
-    bool consume_front(size_t n) {}
-    bool consume_back(size_t n) {}
+    bool consume_front(size_t n) {
+        if (n > size()) 
+            return false;
 
+        while (n--) {
+            if (!pop_front())
+                return false;
+        }
+        
+        return true;
+    }
+    bool consume_back(size_t n) {
+         if (n > size()) 
+            return false;
+
+        while (n--) {
+            if (!pop_back())
+                return false;
+        }
+        
+        return true;
+    }
+
+    // TODO: implement
     bool push_back(const T& val) {}
     bool push_back(T&& val) {}
     bool pop_back(T& out) {}
