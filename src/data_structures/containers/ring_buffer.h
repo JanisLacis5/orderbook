@@ -5,7 +5,6 @@
 #include <optional>
 #include <span>
 #include <utility>
-#include <thread>
 
 template <typename T, typename Alloc = std::allocator<T>>
 class ring_buffer : private Alloc
@@ -41,6 +40,11 @@ public:
     }
     ring_buffer& operator=(ring_buffer&& other) noexcept
     {
+        while (!empty()) {
+            pop_back();
+        }
+        traits::deallocate(allocator_, buffer_, capacity_);
+
         allocator_ = std::move(other.allocator_);
         capacity_ = std::exchange(other.capacity_, 0);
         size_ = std::exchange(other.size_, 0);
@@ -84,32 +88,87 @@ public:
         return true;
     }
 
-    // TODO: implement
-    bool push_back(const T& val) {}
-    bool push_back(T&& val) {}
-    bool pop_back(T& out) {}
-    std::optional<T> pop_back() {}
+    bool push_back(const T& val) {
+        if (full())
+            return false;
 
-    bool push_front(const T& val) {}
-    bool push_front(T&& val) {}
-    bool pop_front(T& out) {}
-    std::optional<T> pop_front() {}
-    // TODO end
+        std::construct_at(buffer_ + tail_, val);        
+        tail_++; tail_ %= capacity();
+        size_++;
+
+        return true;
+    }
+    bool push_back(T&& val) {
+        if (full())
+            return false;
+
+        std::construct_at(buffer_ + tail_, std::move(val));        
+        tail_++; tail_ %= capacity();
+        size_++;
+
+        return true;
+    }
+    bool pop_back(T& out) {
+        if (empty())
+            return false;
+
+        tail_ = tail_ == 0 ? capacity() - 1 : tail_ - 1;
+        out = buffer_[tail_];
+        std::destroy_at(buffer_ + tail_);
+        size_--;
+
+        return true;
+    }
+    std::optional<T> pop_back() {
+        std::optional<T> out{};
+        if (!empty()) {
+            tail_ = tail_ == 0 ? capacity() - 1 : tail_ - 1;
+            out = buffer_[tail_];
+            std::destroy_at(buffer_ + tail_);
+            size_--;
+        }
+        return out;
+    }
+
+    bool pop_front(T& out) {
+        if (empty())
+            return false;
+
+        out = buffer_[head_];
+        std::destroy_at(buffer_ + head_);
+        head_++; head_ %= capacity();
+        size_--;
+
+        return true;
+    }
+    std::optional<T> pop_front() {
+        std::optional<T> out{};
+        if (!empty()) {
+            out = buffer_[head_];
+            std::destroy_at(buffer_ + head_);
+            head_++; head_ %= capacity();
+            size_--;
+        }
+        return out;
+    }
 
     std::span<const T> readable_contiguous() const
     {
         if (head_ < tail_) {
-            auto blockSize = tail_ - head_;
-            return {buffer_[head_], blockSize};
+            auto blockSize = tail_ - head_ - 1;
+            return {buffer_ + head_, blockSize};
         }
         return {buffer_, tail_};
     }
 
     std::span<T> writable_contiguous()
     {
+        if (full())
+            return {};
+            
         if (head_ < tail_)
             return {buffer_ + tail_, capacity() - tail_};
-        return {buffer_, head_};
+        return {buffer_ + tail_, head_ - tail_ - 1};
     }
 
     bool commit_chunk_write(std::span<T> chunk, size_t n)
@@ -125,7 +184,7 @@ private:
     Alloc allocator_;
     size_t capacity_;
     size_t size_{0};
-    T* buffer_;
-    size_t head_{0};
-    size_t tail_{0};
+    T* buffer_{nullptr};
+    size_t head_{0};  // head is the first valid element
+    size_t tail_{0};  // tail-1 is the last valid element
 };
