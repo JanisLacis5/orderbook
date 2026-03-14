@@ -1,10 +1,10 @@
 #pragma once
-#include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <memory>
 #include <optional>
 #include <span>
-#include <memory>
+#include <utility>
 
 template <typename T, typename Alloc = std::allocator<T>>
 class ring_buffer : private Alloc
@@ -14,33 +14,40 @@ public:
     using traits = std::allocator_traits<Alloc>;
 
     explicit ring_buffer(size_t cap, Alloc allocator = Alloc{})
-        : capacity_{cap}, allocator_{allocator}, buffer_{traits::allocate(allocator_, cap)}
+        : capacity_{cap}
+        , allocator_{allocator}
+        , buffer_{traits::allocate(allocator_, cap)}
     {
         if (cap == 0)
             throw std::logic_error("Capacity of the buffer has to be non-zero");
     }
-    ~ring_buffer() {} // TODO: implement
-    ring_buffer(const ring_buffer& other)
+    ~ring_buffer()
     {
-        using std::swap;
-        swap(other.capacity_, capacity_);
-
-        other.buffer_ = new T;
-        other.buffer_ = buffer_;
-        buffer_ = nullptr;
+        while (!empty())
+            pop_back();
+        traits::deallocate(allocator_, buffer_, capacity_);
     }
-    ring_buffer& operator=(const ring_buffer& other)
-    {
-        // TODO: implement
-        return *this;
-    }
+    ring_buffer(const ring_buffer& other) = delete;
+    ring_buffer& operator=(const ring_buffer& other) = delete;
     ring_buffer(ring_buffer&& other) noexcept
+        : allocator_{std::move(other.allocator_)}
+        , capacity_{std::exchange(other.capacity_, 0)}
+        , size_{std::exchange(other.size_, 0)}
+        , buffer_{std::exchange(other.buffer_, nullptr)}
+        , head_{std::exchange(other.head_, 0)}
+        , tail_{std::exchange(other.tail_, 0)}
     {
-        // TODO implement
     }
     ring_buffer& operator=(ring_buffer&& other) noexcept
     {
-        // TODO: implement
+        allocator_ = std::move(other.allocator_);
+        capacity_ = std::exchange(other.capacity_, 0);
+        size_ = std::exchange(other.size_, 0);
+        buffer_ = std::exchange(other.buffer_, nullptr);
+        head_ = std::exchange(other.head_, 0);
+        tail_ = std::exchange(other.tail_, 0);
+
+        return *this;
     }
 
     [[nodiscard]] size_t size() const { return size_; }
