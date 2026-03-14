@@ -13,6 +13,8 @@ public:
     template <typename TIdValidationFunction>
     User(int serverSckFd, TIdValidationFunction validId)
         : socket_{serverSckFd}
+        , outBuffer_(MAX_MESSAGE_LEN)
+        , inBuffer_(MAX_MESSAGE_LEN)
     {
         id = generateId();
 

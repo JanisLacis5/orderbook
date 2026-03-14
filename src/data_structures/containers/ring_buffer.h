@@ -49,24 +49,6 @@ public:
     T& back() { return buffer_[tail_]; }
     const T& back() const { return buffer_[tail_]; }
 
-    std::span<const T> readable_contiguous() const
-    {
-        if (head_ < tail_) {
-            auto blockSize = tail_ - head_;
-            return {buffer_[head_], blockSize};
-        }
-        return {buffer_, tail_};
-    }
-
-    std::span<T> writable_contiguous()
-    {
-        if (head_ < tail_) {
-            auto blockSize = tail_ - head_;
-            return {buffer_[head_], blockSize};
-        }
-        return {buffer_, tail_};
-    }
-
     // TODO: implement
     bool consume_front(size_t n) {}
     bool consume_back(size_t n) {}
@@ -81,6 +63,33 @@ public:
     bool pop_front(T& out) {}
     std::optional<T> pop_front() {}
     // TODO end
+
+    std::span<const T> readable_contiguous() const
+    {
+        if (head_ < tail_) {
+            auto blockSize = tail_ - head_;
+            return {buffer_[head_], blockSize};
+        }
+        return {buffer_, tail_};
+    }
+
+    std::span<T> writable_contiguous()
+    {
+        if (head_ < tail_) {
+            auto blockSize = tail_ - head_;
+            return {buffer_ + head_, blockSize};
+        }
+        return {buffer_, tail_};
+    }
+
+    bool commit_chunk_write(std::span<T> chunk, size_t n)
+    {
+        auto data = chunk.data();
+        for (auto i = 0u; i < n; ++i)
+            if (!push_back(data[i]))
+                return false;
+        return true;
+    }
 
 private:
     size_t capacity_;

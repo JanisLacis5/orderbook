@@ -4,8 +4,13 @@
 bool User::receive()
 {
     size_t received = 0;
-    while (received < MAX_BYTES_PER_HANDLE && inSize_ < MAX_MESSAGE_LEN) {
-        auto n = ::read(socket_.fd(), inBuffer_.data() + inSize_, MAX_MESSAGE_LEN);
+    while (received < MAX_BYTES_PER_HANDLE && inBuffer_.size() < MAX_MESSAGE_LEN) {
+        auto chunk = inBuffer_.writable_contiguous();
+        auto n = ::read(socket_.fd(), chunk.data(), std::min(chunk.size(), MAX_MESSAGE_LEN));
+        if (!inBuffer_.commit_chunk_write(chunk, n)) {
+            logger_.error("failed to commit read");
+            return false;
+        }
 
         if (n == 0)
             break;
@@ -17,8 +22,6 @@ bool User::receive()
             logger_.logerrno("receive");
             return false;
         }
-
-        inSize_ += n;
     }
 
     return true;
