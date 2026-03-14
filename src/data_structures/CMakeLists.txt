@@ -3,3 +3,9 @@ target_include_directories(spsc_queue
     INTERFACE
     ${PROJECT_SOURCE_DIR}/src/data_structures/spsc_queue
 )
+
+add_library(containers INTERFACE)
+target_include_directories(containers
+    INTERFACE
+    ${PROJECT_SOURCE_DIR}/src/data_structures/containers
+)
