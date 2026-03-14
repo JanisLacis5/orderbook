@@ -4,17 +4,20 @@
 #include <cstddef>
 #include <optional>
 #include <span>
+#include <memory>
 
-// TODO: allow custom allocator
-template <typename T>
-class ring_buffer
+template <typename T, typename Alloc = std::allocator<T>>
+class ring_buffer : private Alloc
 {
 public:
-    explicit ring_buffer(size_t cap)
-        : capacity_{cap}
+    using value_type = T;
+    using traits = std::allocator_traits<Alloc>;
+
+    explicit ring_buffer(size_t cap, Alloc allocator = Alloc{})
+        : capacity_{cap}, allocator_{allocator}, buffer_{traits::allocate(allocator_, cap)}
     {
-        assert(cap != 0);
-        // TODO: alloc memory
+        if (cap == 0)
+            throw std::logic_error("Capacity of the buffer has to be non-zero");
     }
     ~ring_buffer() {} // TODO: implement
     ring_buffer(const ring_buffer& other)
@@ -91,11 +94,10 @@ public:
     }
 
 private:
+    Alloc allocator_;
     size_t capacity_;
     size_t size_{0};
-
     T* buffer_;
-
     size_t head_{0};
     size_t tail_{0};
 };
