@@ -14,6 +14,7 @@ struct LevelView {
     uint32_t volume;
     uint32_t orderCnt;
 };
+using levels_t = std::vector<LevelView>;
 
 class Orderbook
 {
@@ -23,8 +24,8 @@ public:
     std::pair<orderId_t, trades_t> modifyOrder(orderId_t orderId, ModifyOrder modifications);
     std::optional<price_t> bestAsk() const;
     std::optional<price_t> bestBid() const;
-    std::vector<LevelView> fullDepthAsk() const { return fullDepth(Side::Sell); }
-    std::vector<LevelView> fullDepthBid() const { return fullDepth(Side::Buy); }
+    levels_t fullDepthAsk() const { return fullDepth(Side::Sell); }
+    levels_t fullDepthBid() const { return fullDepth(Side::Buy); }
 
 private:
     struct OrderInfo {
@@ -49,5 +50,5 @@ private:
     bool canBeFullyFilled(price_t price, quantity_t quantity, Side side) const;
     bool doesCrossSpread(price_t price, Side side) const;
     void addAtOrderPrice(orderPtr_t order);
-    std::vector<LevelView> fullDepth(Side side) const;
+    levels_t fullDepth(Side side) const;
 };

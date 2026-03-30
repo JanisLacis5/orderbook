@@ -31,9 +31,9 @@ trades_t Orderbook::matchOrder(orderPtr_t order)
             Trade trade = (side == Side::Buy ? newTrade(orderId, opposite->getOrderId(), toFill, currPrice)
                                              : newTrade(opposite->getOrderId(), orderId, toFill, currPrice));
 
-            trades.push_back(trade);
             opposite->fill(toFill);
             order->fill(toFill);
+            trades.push_back(trade);
             levelData_[currPrice].volume -= toFill;
 
             if (opposite->isFullyFilled()) {
@@ -64,8 +64,9 @@ trades_t Orderbook::matchOrder(orderPtr_t order)
 
 microsec_t Orderbook::getCurrTime() const
 {
-    auto time = std::chrono::system_clock::now().time_since_epoch();
-    return std::chrono::duration_cast<microsec_t>(time);
+    using namespace std::chrono;
+    auto time = system_clock::now().time_since_epoch();
+    return duration_cast<microsec_t>(time);
 }
 
 void Orderbook::processAddedOrder(orderPtr_t order)
@@ -90,8 +91,7 @@ bool Orderbook::canBeFullyFilled(price_t price, quantity_t quantity, Side side) 
         return false;
 
     price_t treshold;
-    // respectively ask_ or bid_ are not empty - checked in doesCrossSpread
-    // function
+    // respectively ask_ or bid_ are not empty - checked in doesCrossSpread function
     if (side == Side::Sell) {
         const auto& [bidPrice, _] = *bid_.begin();
         treshold = bidPrice;
@@ -127,8 +127,8 @@ bool Orderbook::doesCrossSpread(price_t price, Side side) const
 
         const auto& [bestAsk, _] = *ask_.begin();
         return price >= bestAsk;
-    } else
-        throw std::logic_error("Invalid side");
+    }
+    throw std::logic_error("Invalid side");
 }
 
 void Orderbook::addAtOrderPrice(orderPtr_t order)
@@ -141,10 +141,10 @@ void Orderbook::addAtOrderPrice(orderPtr_t order)
         throw std::logic_error("Invalid side");
 }
 
-std::vector<LevelView> Orderbook::fullDepth(Side side) const
+levels_t Orderbook::fullDepth(Side side) const
 {
-    bool isAsk = side == Side::Sell;
-    std::vector<LevelView> levels;
+    auto isAsk = side == Side::Sell;
+    levels_t levels;
     levels.reserve((isAsk ? ask_.size() : bid_.size()));
 
     auto beg = (isAsk ? ask_.begin() : bid_.begin());
@@ -186,12 +186,8 @@ std::pair<orderId_t, trades_t> Orderbook::addOrder(quantity_t quantity, price_t 
     return {order->getOrderId(), matchOrder(order)};
 }
 
-#include <iostream>
-
 void Orderbook::cancelOrder(orderId_t orderId)
 {
-    for (auto& orderInfo : orders_)
-        std::cout << orderInfo.second.order_->getOrderId() << std::endl;
     OrderInfo orderInfo = orders_.at(orderId);
     orders_.erase(orderId);
 
