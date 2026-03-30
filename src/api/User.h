@@ -16,6 +16,7 @@ public:
         : socket_{serverSckFd}
         , outBuffer_(MAX_MESSAGE_LEN)
         , inBuffer_(MAX_MESSAGE_LEN)
+        , queue_(MAX_MESSAGE_LEN * 100)
     {
         id = generateId();
 

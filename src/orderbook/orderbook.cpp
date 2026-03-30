@@ -7,8 +7,8 @@
 // PRIVATE FUNCTION IMPLEMENTATIONS
 trades_t Orderbook::matchOrder(orderPtr_t order)
 {
-    Side side = order->getSide();
-    orderId_t orderId = order->getOrderId();
+    auto side = order->getSide();
+    auto orderId = order->getOrderId();
     trades_t trades;
     std::optional<price_t> threshold;
 
@@ -78,7 +78,7 @@ void Orderbook::processAddedOrder(orderPtr_t order)
     else if (order->getSide() == Side::Buy)
         orders_[orderId].location_ = std::prev(bid_[order->getPrice()].end());
 
-    levelData_[order->getPrice()].volume += order->getInitialQuantity();
+    levelData_[order->getPrice()].volume += order->getRemainingQuantity();
     levelData_[order->getPrice()].orderCnt++;
 }
 

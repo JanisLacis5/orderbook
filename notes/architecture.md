@@ -43,7 +43,7 @@ All order-related messages **require `userID`**.
 | ------------- | --------------------------- | ------------------------ | -------- |
 | `openOrder`   | quantity, price, type, side | Submit a new order       |`orderID`|
 | `cancelOrder` | tradeID                     | Cancel an existing order |`null`|
-| `modifyOrder` | tradeID, modifications      | Modify an existing order, does not change the orderID |`null`|
+| `modifyOrder` | tradeID, modifications      | Modify an existing order, changes the orderID |`orderID`|
 
 `modifications` may include changes to:
 
