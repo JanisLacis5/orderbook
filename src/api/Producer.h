@@ -7,7 +7,6 @@ class Producer
 {
 public:
     Producer()
-        : thread_{&Producer::start, this}
     {
     }
 

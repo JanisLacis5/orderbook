@@ -1,6 +1,6 @@
 #include "Messager.h"
 
-std::vector<FormattedMessage> Messager::decode(std::array<std::byte, MAX_MESSAGE_LEN>& raw, size_t size)
+formattedMessages_t Messager::decode(rawMessage_t& raw, size_t size)
 {
     size_t currPos = 0;
 
@@ -9,4 +9,4 @@ std::vector<FormattedMessage> Messager::decode(std::array<std::byte, MAX_MESSAGE
             break;
 }
 
-std::array<std::byte, MAX_MESSAGE_LEN> serialize(FormattedMessage& mes) {}
+rawMessage_t Messager::encode(FormattedMessage& mes) {}

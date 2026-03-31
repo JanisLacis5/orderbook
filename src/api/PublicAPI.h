@@ -1,9 +1,9 @@
 #pragma once
 
 #include "EpollManager.h"
+#include "Messager.h"
 #include "Socket.h"
 #include "User.h"
-#include <array>
 #include <map>
 #include <netinet/in.h>
 
@@ -28,7 +28,7 @@ private:
         std::string message;
         size_t payloadSize;
 
-        std::array<std::byte, MAX_RESPONSE_LEN> payload; // already formatted in the required format
+        rawMessage_t payload; // already formatted in the required format
     };
 
     Socket listenSocket_{};
@@ -37,5 +37,5 @@ private:
     std::map<int, std::unique_ptr<User>> users_; // user socket fd : User*
 
     int acceptNewListener();
-    std::array<std::byte, MAX_RESPONSE_LEN> createResBuf(API_STATUS_CODE status, std::span<std::byte> data);
+    rawMessage_t createResBuf(API_STATUS_CODE status, std::span<std::byte> data);
 };

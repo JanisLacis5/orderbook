@@ -11,16 +11,19 @@ struct FormattedMessage {
     std::vector<std::pair<uint8_t, uint8_t>> params;
 };
 
+using formattedMessages_t = std::vector<FormattedMessage>;
+using rawMessage_t = std::array<std::byte, MAX_MESSAGE_LEN>;
+
 class IMessager
 {
 public:
-    virtual std::vector<FormattedMessage> decode(std::array<std::byte, MAX_MESSAGE_LEN>& raw, size_t size) = 0;
-    virtual std::array<std::byte, MAX_MESSAGE_LEN> serialize(FormattedMessage& mes) = 0;
+    virtual formattedMessages_t decode(rawMessage_t& raw, size_t size) = 0;
+    virtual rawMessage_t encode(FormattedMessage& mes) = 0;
 };
 
 class Messager : public IMessager
 {
 public:
-    std::vector<FormattedMessage> decode(std::array<std::byte, MAX_MESSAGE_LEN>& raw, size_t size) override;
-    std::array<std::byte, MAX_MESSAGE_LEN> serialize(FormattedMessage& mes) override;
+    formattedMessages_t decode(rawMessage_t& raw, size_t size) override;
+    rawMessage_t encode(FormattedMessage& mes) override;
 };

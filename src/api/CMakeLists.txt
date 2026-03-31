@@ -27,9 +27,9 @@ target_include_directories(producer
     PUBLIC
     ${PROJECT_SOURCE_DIR}/src/api
 )
-# target_link_libraries(producer
-#     PUBLIC 
-# )
+target_link_libraries(producer
+    PUBLIC orderbook 
+)
 
 add_library(consumer
     ${PROJECT_SOURCE_DIR}/src/api/Consumer.cpp

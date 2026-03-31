@@ -2,6 +2,7 @@
 
 #include "types.h"
 #include <list>
+#include <stdexcept>
 
 class Order
 {
@@ -32,7 +33,7 @@ public:
     void fill(quantity_t quantity)
     {
         if (quantity > remainingQuantity_)
-            throw std::logic_error("fill: invalid quantities");
+            throw std::invalid_argument("fill: invalid quantities");
 
         remainingQuantity_ -= quantity;
     }

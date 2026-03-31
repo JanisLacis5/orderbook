@@ -1,5 +1,6 @@
 #include "PublicAPI.h"
 #include "Consumer.h"
+#include "Messager.h"
 #include "Producer.h"
 #include <algorithm>
 #include <array>
@@ -14,7 +15,7 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 
-std::array<std::byte, MAX_RESPONSE_LEN> PublicAPI::createResBuf(API_STATUS_CODE status, std::span<std::byte> data)
+rawMessage_t PublicAPI::createResBuf(API_STATUS_CODE status, std::span<std::byte> data)
 {
     APIResponse hdr;
     hdr.payloadSize = data.size();
@@ -38,7 +39,7 @@ std::array<std::byte, MAX_RESPONSE_LEN> PublicAPI::createResBuf(API_STATUS_CODE 
     uint32_t codeNetEnd = htonl(hdr.code);
     auto codeBytes = std::bit_cast<std::array<std::byte, 4>>(codeNetEnd);
 
-    std::array<std::byte, MAX_RESPONSE_LEN> buf;
+    rawMessage_t buf;
     std::copy(codeBytes.begin(), codeBytes.end(), buf.begin());
     std::memcpy(buf.data() + 4, hdr.message.data(), HDR_MESSAGE_SIZE);
     std::copy(data.begin(), data.begin() + data.size(), buf.begin() + HDR_SIZE);
