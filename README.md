@@ -48,13 +48,8 @@ cmake --build build
 cd build && ctest
 ```
 
-## Current Progress & Future Work
+## Author notes:
+- currently working on replay system where a user can feed in file of events documented in `src/replay/DOCS.md` and process / 
+inspect this data in many ways
+- API has been started but is buggy and is not worked on currently
 
-- [x] Implement core backend for the orderbook. That includes bid and ask sides, order types, order placement.
-- [x] Implement a matching engine that matches orders by price-time priority.
-- [x] Generate unit tests to prevent bugs
-- [ ] Simulate lots of participants to test how the engine performs with a lot of interactions per second. Fill out
-  the [benchmarks](#benchmarks) section of this README
-- [ ] Create an efficient protocol for data transfer between different parts of the app
-- [ ] Create frontend that interacts with the public API from the backend to place orders, see depth of market and
-  show a real price ladder.
