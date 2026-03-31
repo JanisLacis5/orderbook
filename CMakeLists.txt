@@ -94,12 +94,14 @@ add_executable(test_core
     tests/unit/test_order.cpp
     tests/unit/test_orderbook.cpp
     tests/unit/test_spscqueue.cpp
+    tests/unit/test_ring_buffer.cpp
 )
 target_link_libraries(test_core
     PRIVATE
     common
     orderbook
     spsc_queue
+    containers
     gtest_main
     project_sanitizers
 )
