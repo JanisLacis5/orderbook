@@ -1,14 +1,13 @@
+#include "ring_buffer.h"
 #include <gtest/gtest.h>
-
 #include <span>
 #include <stdexcept>
 #include <utility>
 
-#include "ring_buffer.h"
-
 using testType = int;
 
-class RingBufferTest : public testing::Test {
+class RingBufferTest : public testing::Test
+{
 public:
     size_t cap = 4u;
     ring_buffer<testType> rb{cap};

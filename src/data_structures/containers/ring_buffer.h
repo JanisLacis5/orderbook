@@ -61,13 +61,15 @@ public:
 
     T& front() { return buffer_[head_]; }
     const T& front() const { return buffer_[head_]; }
-    T& back() { 
+    T& back()
+    {
         auto ptr = (tail_ + capacity() - 1) % capacity();
-        return buffer_[ptr]; 
+        return buffer_[ptr];
     }
-    const T& back() const {
+    const T& back() const
+    {
         auto ptr = (tail_ + capacity() - 1) % capacity();
-        return buffer_[ptr]; 
+        return buffer_[ptr];
     }
 
     bool consume_front(size_t n)
@@ -169,7 +171,7 @@ public:
 
     std::span<const T> readable_contiguous() const
     {
-        if (empty()) 
+        if (empty())
             return {};
 
         if (head_ < tail_) {

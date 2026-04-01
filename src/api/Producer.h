@@ -6,9 +6,7 @@
 class Producer
 {
 public:
-    Producer()
-    {
-    }
+    Producer() {}
 
     // void send_event();  TODO(1)
 

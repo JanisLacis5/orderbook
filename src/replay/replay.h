@@ -1,21 +1,15 @@
 #include "file.h"
-#include "usings.h"
 #include "types.h"
+#include "usings.h"
 #include <variant>
 
 enum class Actions { ADD, CANCEL, MODIFY };
-enum class ArgType {
-    OrderID,
-    OrderType,
-    Quantity,
-    Side,
-    Price
-};
+enum class ArgType { OrderID, OrderType, Quantity, Side, Price };
 using ArgValue = std::variant<orderId_t, OrderType, quantity_t, Side, price_t>;
 using Arg = std::pair<ArgType, ArgValue>;
 
 struct Operation {
-    Actions action; 
+    Actions action;
     std::vector<Arg> args;
 };
 

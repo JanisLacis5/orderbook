@@ -6,9 +6,7 @@
 class Consumer
 {
 public:
-    Consumer()
-    {
-    }
+    Consumer() {}
 
     // void send_event();  TODO(1)
 
