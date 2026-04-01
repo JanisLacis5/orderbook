@@ -3,8 +3,9 @@ output:
 cli flags: 
 
 # Actions (for args, order is important)
-- ADD {MARKET | GTC | GTE | FOK | FAK}
-    args: quantity, side, price
+- ADD 
+    args: orderType, quantity, side, price
+    orderTypes: MARKET | GTC | GTE | FOK | FAK
 - CANCEL
     args: orderId
 - MODIFY
