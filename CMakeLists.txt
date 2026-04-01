@@ -61,14 +61,6 @@ target_link_libraries(orderbook
     PUBLIC spsc_queue common
 )
 
-# Main
-add_executable(app
-    ${PROJECT_SOURCE_DIR}/src/main.cpp
-)
-target_link_libraries(app
-    PRIVATE orderbook api
-)
-
 # FORMATTING TARGET
 if (NOT EXISTS "${CMAKE_SOURCE_DIR}/.clang-format")
     message(FATAL_ERROR "No .clang-format file found in ${CMAKE_SOURCE_DIR}")
