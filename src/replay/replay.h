@@ -34,5 +34,4 @@ private:
     File outputFile_{"output.txt"};
 
     Operation parseLine(const std::string& raw);
-    std::vector<std::string> strSplit(const std::string& toSplit);
 };
