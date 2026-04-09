@@ -21,5 +21,13 @@ std::vector<std::string> replay::strSplit(const std::string& toSplit) {
 
 Operation replay::parseLine(const std::string& raw) {
     auto tokens = strSplit(raw);
-
+    if (tokens.empty())
+        return {};
+    
+    auto action = tokens[0];    
+    if (action == "add") {}
+    if (action == "cancel") {}
+    if (action == "modify") {}
+    else 
+        return {};
 }
