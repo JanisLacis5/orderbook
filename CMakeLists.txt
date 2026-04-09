@@ -45,9 +45,11 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/fileops)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/replay)
 
 # Common
-add_library(common INTERFACE)
+add_library(common 
+    ${PROJECT_SOURCE_DIR}/src/common/strfuncs.cpp
+)
 target_include_directories(common
-    INTERFACE
+    PUBLIC 
     ${PROJECT_SOURCE_DIR}/src/common
 )
 
