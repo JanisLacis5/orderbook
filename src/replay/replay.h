@@ -1,16 +1,12 @@
+#include "Logger.h"
 #include "file.h"
-#include "types.h"
-#include "usings.h"
-#include <variant>
+#include <unordered_map>
 
-enum class Actions { ADD, CANCEL, MODIFY };
-enum class ArgType { OrderID, OrderType, Quantity, Side, Price };
-using ArgValue = std::variant<orderId_t, OrderType, quantity_t, Side, price_t>;
-using Arg = std::pair<ArgType, ArgValue>;
+enum class Actions { ADD, CANCEL, MODIFY, NULLACTION };
 
 struct Operation {
-    Actions action;
-    std::vector<Arg> args;
+    Actions action{Actions::NULLACTION};
+    std::vector<std::string> args;
 };
 
 class replay
@@ -32,6 +28,8 @@ public:
 private:
     File inputFile_;
     File outputFile_{"output.txt"};
+    Logger logger_{"replay"};
+    static const std::unordered_map<std::string, Actions> actionMap_;
 
     Operation parseLine(const std::string& raw);
 };

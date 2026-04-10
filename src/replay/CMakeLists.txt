@@ -6,5 +6,5 @@ target_include_directories(replay
         ${PROJECT_SOURCE_DIR}/src/replay
 )
 target_link_libraries(replay
-    PUBLIC fileops orderbook common
+    PUBLIC fileops orderbook common logger
 )
