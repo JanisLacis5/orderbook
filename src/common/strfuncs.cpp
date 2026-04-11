@@ -25,14 +25,14 @@ namespace strfuncs
 
     std::string lower(const std::string& str)
     {
-        std::string out;
+        std::string out(str.size(), '\0');
         std::transform(str.begin(), str.end(), out.begin(), [](auto c) { return std::tolower(c); });
         return out;
     }
 
     std::string upper(const std::string& str)
     {
-        std::string out;
+        std::string out(str.size(), '\0');
         std::transform(str.begin(), str.end(), out.begin(), [](auto c) { return std::toupper(c); });
         return out;
     }
