@@ -1,5 +1,10 @@
 #include "replay.h"
 #include "strfuncs.h"
+#include <fstream>
+
+void replay::run() {
+    std::ifstream instream(inputFp_);
+}
 
 Operation replay::parseLine(const std::string& raw)
 {

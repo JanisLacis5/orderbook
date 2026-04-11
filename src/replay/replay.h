@@ -2,6 +2,7 @@
 #include "file.h"
 #include "orderbook.h"
 #include <unordered_map>
+#include <filesystem>
 
 enum class Actions { ADD, CANCEL, MODIFY, NULLACTION };
 
@@ -13,13 +14,13 @@ struct Operation {
 class replay
 {
 public:
-    explicit replay(std::string inFp)
-        : inputFile_{inFp}
+    explicit replay(std::filesystem::path inFp)
+        : inputFp_{inFp}
     {
     }
-    explicit replay(std::string inFp, std::string outFp)
-        : inputFile_{inFp}
-        , outputFile_{outFp}
+    explicit replay(std::filesystem::path inFp, std::string outFp)
+        : inputFp_{inFp}
+        , outputFp_{outFp}
     {
     }
     ~replay();
@@ -27,8 +28,8 @@ public:
     void run();
 
 private:
-    File inputFile_;
-    File outputFile_{"output.txt"};
+    std::filesystem::path inputFp_;
+    std::filesystem::path outputFp_{"output.txt"};
     Logger logger_{"replay"};
     Orderbook ob_{};
 
