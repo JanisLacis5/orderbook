@@ -12,3 +12,5 @@ using microsec_t = std::chrono::microseconds;
 
 using userId_t = std::uint64_t;
 using apiCallId_t = std::uint32_t;
+
+constexpr inline orderId_t INVALID_ORDER_ID = std::numeric_limits<std::uint64_t>::max();
