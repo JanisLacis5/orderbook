@@ -41,7 +41,6 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/data_structures)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/net)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/logger)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/api)
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/fileops)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/replay)
 
 # Common
