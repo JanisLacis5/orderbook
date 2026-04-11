@@ -4,6 +4,10 @@
 
 void replay::run() {
     std::ifstream instream(inputFp_);
+    for (std::string out(100, '\0'); instream.getline(out.data(), out.size());) {
+        auto op = parseLine(out);
+        processOperation(op);
+    }
 }
 
 Operation replay::parseLine(const std::string& raw)
@@ -14,9 +18,16 @@ Operation replay::parseLine(const std::string& raw)
     if (tokens.empty())
         return {};
 
+    std::string parsedLine = "";
+    for (auto t: tokens)
+         parsedLine += t + " ";
+    logger_.debug(std::format("parsed line: {}", parsedLine));
+
     auto action = strfuncs::lower(tokens[0]);
+    logger_.debug(std::format("raw action: {}, lowered: {}", tokens[0], action));
+
     if (actionMap_.find(action) == actionMap_.end()) {
-        logger_.error("action invalid");
+        logger_.error(std::format("action '{}' invalid", action));
         return {};
     }
     ret.action = actionMap_.at(action);

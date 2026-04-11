@@ -8,3 +8,8 @@ target_include_directories(replay
 target_link_libraries(replay
     PUBLIC fileops orderbook common logger
 )
+
+add_executable(replayexe main.cpp)
+target_link_libraries(replayexe 
+    PRIVATE replay
+)
