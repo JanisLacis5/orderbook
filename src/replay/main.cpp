@@ -1,6 +1,7 @@
 #include "replay.h"
 
-int main() {
+int main()
+{
     replay replay{"input.txt"};
     replay.run();
 }

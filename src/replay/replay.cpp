@@ -2,7 +2,8 @@
 #include "strfuncs.h"
 #include <fstream>
 
-void replay::run() {
+void replay::run()
+{
     std::ifstream instream(inputFp_);
     for (std::string out(100, '\0'); instream.getline(out.data(), out.size());) {
         auto op = parseLine(out);
@@ -19,8 +20,8 @@ Operation replay::parseLine(const std::string& raw)
         return {};
 
     std::string parsedLine = "";
-    for (auto t: tokens)
-         parsedLine += t + " ";
+    for (auto t : tokens)
+        parsedLine += t + " ";
     logger_.debug(std::format("parsed line: {}", parsedLine));
 
     auto action = strfuncs::lower(tokens[0]);
