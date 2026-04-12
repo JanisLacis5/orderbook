@@ -1,6 +1,8 @@
 #include "replay.h"
 #include "strfuncs.h"
+#include "usings.h"
 #include <fstream>
+#include <span>
 
 void replay::run()
 {
@@ -39,55 +41,47 @@ Operation replay::parseLine(const std::string& raw)
 
 void replay::processOperation(Operation& op)
 {
-    // this lambda expects the id to be at args[0]
-    auto getOrderIdFromArgs = [&](std::span<std::string> args) {
-        orderId_t orderId{};
-        auto idstr = args[1];
-        auto [ptr, ec] = std::from_chars(idstr.data(), idstr.data() + idstr.size(), orderId);
-
-        if (ec == std::errc()) {
-            logger_.error("bad input in processOperation");
-            return INVALID_ORDER_ID;
-        }
-        if (ec == std::errc::invalid_argument) {
-            logger_.error("not a number in processOperation");
-            return INVALID_ORDER_ID;
-        }
-        if (ec == std::errc::result_out_of_range) {
-            logger_.error("overflow in processOperation");
-            return INVALID_ORDER_ID;
-        }
-
-        return orderId;
-    };
-
     if (op.action == Actions::NULLACTION)
         return;
     else if (op.action == Actions::ADD) {
         auto ret = onAdd(op.args);
     } else if (op.action == Actions::CANCEL) {
-        std::span<std::string> args{op.args};
-        orderId_t orderId = getOrderIdFromArgs(args);
-        if (orderId == INVALID_ORDER_ID) {
+        auto orderId = strfuncs::strToType<orderId_t>(op.args[1]);
+        if (!orderId.has_value()) {
             logger_.error("invalid order id received");
             return;
         }
-
-        auto ret = onCancel(orderId);
+        auto ret = onCancel(orderId.value());
     } else if (op.action == Actions::MODIFY) {
-        std::span<std::string> args{op.args};
-        orderId_t orderId = getOrderIdFromArgs(args);
-        if (orderId == INVALID_ORDER_ID) {
+        auto orderId = strfuncs::strToType<orderId_t>(op.args[1]);
+        if (!orderId.has_value()) {
             logger_.error("invalid order id received");
             return;
         }
 
         std::vector<std::string> newParams(op.args.begin() + 1, op.args.end());
-        auto ret = onModify(orderId, newParams);
+        auto ret = onModify(orderId.value(), newParams);
     }
 }
 
-bool replay::onAdd(std::vector<std::string>& params) {}
+bool replay::onAdd(std::vector<std::string>& params) {
+    if (params.size() != 4) {
+        logger_.error(std::format("received wrong number of params for action ADD (received {}, expected 4)", params.size()));
+        return false;
+    }
+    
+    // raw strings
+    auto typeParam = params[0];
+    auto quantityParam = params[1];
+    auto sideParam = params[2];
+    auto priceParam = params[3];
+
+    // stirngs formatted
+    // TODO: TYPE
+    quantity_t quantity{};
+    auto res = std::from_chars(quantityParam.data(), quantityParam.data() + quantityParam.size(), quantity);
+
+}
 
 bool replay::onCancel(orderId_t orderId) {}
 
