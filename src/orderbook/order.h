@@ -16,8 +16,14 @@ public:
         , side_{side}
         , opentime_{opentime}
     {
-        if (quantity <= 0)
-            throw std::invalid_argument("quantity must be larger than 0");
+        if (quantity <= 0 || quantity == badValues::quantity)
+            throw std::invalid_argument("bad quantity");
+        if (type == OrderType::Bad)
+            throw std::invalid_argument("order has to have a type");
+        if (price == badValues::price)
+            throw std::invalid_argument("bad price");
+        if (side == Side::Bad)
+            throw std::invalid_argument("bad side");
     }
 
     orderId_t getOrderId() const { return orderid_; }
