@@ -33,9 +33,8 @@ private:
     Operation parseLine(const std::string& raw);
     void processOperation(Operation& op);
 
-    // Functions per each action
+    // Functions per each action except cancel (just ob.cancel)
     bool onAdd(std::vector<std::string>& params);
-    bool onCancel(orderId_t orderId);
     bool onModify(orderId_t orderId, std::vector<std::string>& params);
 
     // Parsing functions for parameters

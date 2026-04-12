@@ -35,7 +35,12 @@ replay::~replay() {}
 void replay::run()
 {
     std::ifstream instream(inputFp_);
-    for (std::string out(100, '\0'); instream.getline(out.data(), out.size());) {
+    std::string out;
+
+    while (std::getline(instream, out)) {
+        if (out[0] == '#')
+            continue;
+
         auto op = parseLine(out);
         processOperation(op);
     }
@@ -81,7 +86,7 @@ void replay::processOperation(Operation& op)
         if (orderId == badValues::orderId)
             return;
 
-        auto ret = onCancel(orderId);
+        ob_.cancelOrder(orderId);
     } else if (op.action == Actions::MODIFY) {
         auto orderId = parseOrderId(op.args[1]);
         if (orderId == badValues::orderId)
@@ -124,10 +129,8 @@ bool replay::onAdd(std::vector<std::string>& params)
     for (const auto& trade : trades)
         executedQty += trade.quantity;
 
-    std::string tradeDetails;
-    if (trades.empty()) {
-        tradeDetails = "no trades";
-    } else {
+    std::string tradeDetails = "";
+    if (!trades.empty()) {
         for (const auto& trade : trades) {
             tradeDetails += std::format("\n  trade | buyer={} seller={} qty={} price={}", trade.buyer, trade.seller,
                                         trade.quantity, trade.price);
@@ -139,11 +142,6 @@ bool replay::onAdd(std::vector<std::string>& params)
                     orderId, strfuncs::upper(params[0]), strfuncs::upper(params[2]), price, quantity, executedQty,
                     trades.size(), tradeDetails));
 
-    return true;
-}
-
-bool replay::onCancel(orderId_t orderId)
-{
     return true;
 }
 
