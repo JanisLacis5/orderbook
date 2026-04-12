@@ -2,6 +2,7 @@
 
 #include "Logger.h"
 #include "orderbook.h"
+#include "usings.h"
 #include <filesystem>
 #include <unordered_map>
 
@@ -38,6 +39,7 @@ private:
     bool onModify(orderId_t orderId, std::vector<std::string>& params);
 
     // Parsing functions for parameters
+    orderId_t parseOrderId(std::string_view id);
     OrderType parseOrderType(std::string_view type);
     quantity_t parseQuantity(std::string_view quantity);
     Side parseSide(std::string_view side);

@@ -77,21 +77,18 @@ void replay::processOperation(Operation& op)
     else if (op.action == Actions::ADD) {
         auto ret = onAdd(op.args);
     } else if (op.action == Actions::CANCEL) {
-        auto orderId = strfuncs::strToType<orderId_t>(op.args[1]);
-        if (!orderId.has_value()) {
-            logger_.error("invalid order id received");
+        auto orderId = parseOrderId(op.args[1]);
+        if (orderId == badValues::orderId)
             return;
-        }
-        auto ret = onCancel(orderId.value());
+
+        auto ret = onCancel(orderId);
     } else if (op.action == Actions::MODIFY) {
-        auto orderId = strfuncs::strToType<orderId_t>(op.args[1]);
-        if (!orderId.has_value()) {
-            logger_.error("invalid order id received");
+        auto orderId = parseOrderId(op.args[1]);
+        if (orderId == badValues::orderId)
             return;
-        }
 
         std::vector<std::string> newParams(op.args.begin() + 1, op.args.end());
-        auto ret = onModify(orderId.value(), newParams);
+        auto ret = onModify(orderId, newParams);
     }
 }
 
@@ -111,6 +108,11 @@ bool replay::onAdd(std::vector<std::string>& params)
     if (type == OrderType::Bad || quantity == badValues::quantity || side == Side::Bad || price == badValues::price)
         return false;
 
+    auto [orderId, trades] = ob_.addOrder(quantity, price, type, side);
+
+    logger_.info(std::format("New order with id {}:\nprice: {}\nquantity: {}\nside: {}\ntype: {}", orderId, price,
+                             quantity, strfuncs::upper(params[2]), strfuncs::upper(params[0])));
+
     return true;
 }
 
@@ -122,6 +124,17 @@ bool replay::onCancel(orderId_t orderId)
 bool replay::onModify(orderId_t orderId, std::vector<std::string>& params)
 {
     return true;
+}
+
+orderId_t replay::parseOrderId(std::string_view id)
+{
+    auto tmp = strfuncs::strToType<orderId_t>(id);
+    if (!tmp.has_value()) {
+        logger_.error(std::format("Failed to parse 'order_id' field, input: {}", id));
+        return badValues::orderId;
+    }
+
+    return tmp.value();
 }
 
 OrderType replay::parseOrderType(std::string_view type)
