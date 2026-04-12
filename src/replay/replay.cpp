@@ -110,8 +110,34 @@ bool replay::onAdd(std::vector<std::string>& params)
 
     auto [orderId, trades] = ob_.addOrder(quantity, price, type, side);
 
+    // Logging (everything up until the function end)
     logger_.info(std::format("New order with id {}:\nprice: {}\nquantity: {}\nside: {}\ntype: {}", orderId, price,
                              quantity, strfuncs::upper(params[2]), strfuncs::upper(params[0])));
+    if (orderId == 0) {
+        logger_.info(
+            std::format("Order rejected | type={} side={} price={} qty={} | reason=order conditions not satisfied",
+                        strfuncs::upper(params[0]), strfuncs::upper(params[2]), price, quantity));
+        return true;
+    }
+
+    quantity_t executedQty = 0;
+    for (const auto& trade : trades)
+        executedQty += trade.quantity;
+
+    std::string tradeDetails;
+    if (trades.empty()) {
+        tradeDetails = "no trades";
+    } else {
+        for (const auto& trade : trades) {
+            tradeDetails += std::format("\n  trade | buyer={} seller={} qty={} price={}", trade.buyer, trade.seller,
+                                        trade.quantity, trade.price);
+        }
+    }
+
+    logger_.info(
+        std::format("Order accepted | id={} type={} side={} price={} qty={} | executed_qty={} trade_count={}{}",
+                    orderId, strfuncs::upper(params[0]), strfuncs::upper(params[2]), price, quantity, executedQty,
+                    trades.size(), tradeDetails));
 
     return true;
 }
