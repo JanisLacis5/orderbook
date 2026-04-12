@@ -2,9 +2,9 @@
 
 #include "usings.h"
 
-enum OrderType { Market, GoodTillCancel, GoodTillEOD, FillOrKill, FillAndKill };
+enum class OrderType { Bad, Market, GoodTillCancel, GoodTillEOD, FillOrKill, FillAndKill };
 
-enum Side { Buy, Sell };
+enum class Side { Bad, Buy, Sell };
 
 struct ModifyOrder {
     std::optional<price_t> price{};
