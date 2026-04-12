@@ -12,7 +12,7 @@ namespace strfuncs
     std::pair<bool, std::string> checkAfterConv(std::from_chars_result& res);
     
     template <typename resultType>
-    std::expected<resultType, std::errc> strToType(std::string& src) {
+    std::expected<resultType, std::errc> strToType(std::string_view src) {
         static_assert(std::is_default_constructible_v<resultType>);
         static_assert(std::is_integral_v<resultType>);
 

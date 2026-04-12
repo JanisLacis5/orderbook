@@ -61,4 +61,10 @@ private:
     bool onAdd(std::vector<std::string>& params);
     bool onCancel(orderId_t orderId);
     bool onModify(orderId_t orderId, std::vector<std::string>& params);
+
+    // Parsing functions for parameters
+    OrderType parseOrderType(std::string_view type);
+    quantity_t parseQuantity(std::string_view quantity);
+    Side parseSide(std::string_view side);
+    price_t parsePrice(std::string_view price);
 };

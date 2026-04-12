@@ -73,44 +73,75 @@ bool replay::onAdd(std::vector<std::string>& params) {
         return false;
     }
     
-    // raw strings
-    auto typeParam = params[0];
-    auto quantityParam = params[1];
-    auto sideParam = params[2];
-    auto priceParam = params[3];
+    auto type = parseOrderType(params[0]);
+    auto quantity = parseQuantity(params[1]);
+    auto side = parseSide(params[2]);
+    auto price = parsePrice(params[3]);
 
-    // stirngs formatted
-    OrderType type;
-    if (typeParam == "market")
-        type = OrderType::Market;
-    else if (typeParam == "gtc") 
-        type = OrderType::GoodTillCancel;
-    else if (typeParam == "gte")
-        type = OrderType::GoodTillEOD;
-    else if (typeParam == "fok")
-        type = OrderType::FillOrKill;
-    else if (typeParam == "fak")
-        type = OrderType::FillAndKill;
-    else {
-        logger_.error("Invalid order type");
+    if (
+        type == OrderType::Bad ||
+        quantity == badValues::quantity ||
+        side == Side::Bad ||
+        price == badValues::price
+    )
         return false;
-    }
-    auto quantity = strfuncs::strToType<quantity_t>(quantityParam);
-    if (!quantity.has_value()) {
-        logger_.error(std::format("Failed to parse 'quantity' field, input: {}", quantityParam));
-        return false;
-    }
-    auto side = sideParam == "sell" ? Side::Sell : Side::Buy;
-    auto price = strfuncs::strToType<price_t>(priceParam);
-    if (!price.has_value()) {
-        logger_.error(std::format("Failed to parse 'price' field, input: {}", priceParam));
-        return false;
-    }
+
+    return true;
 }
 
-bool replay::onCancel(orderId_t orderId) {}
+bool replay::onCancel(orderId_t orderId) {
+    return true;
+}
 
-bool replay::onModify(orderId_t orderId, std::vector<std::string>& params) {}
+bool replay::onModify(orderId_t orderId, std::vector<std::string>& params) {
+    return true;
+}
+
+OrderType replay::parseOrderType(std::string_view type) {
+    if (type == "market")
+        return OrderType::Market;
+    else if (type == "gtc") 
+        return OrderType::GoodTillCancel;
+    else if (type == "gte")
+        return OrderType::GoodTillEOD;
+    else if (type == "fok")
+        return OrderType::FillOrKill;
+    else if (type == "fak")
+        return OrderType::FillAndKill;
+
+    logger_.error("Invalid order type");
+    return OrderType::Bad;
+}
+
+quantity_t replay::parseQuantity(std::string_view quantity) {
+    auto tmp = strfuncs::strToType<quantity_t>(quantity);
+    if (!tmp.has_value()) {
+        logger_.error(std::format("Failed to parse 'quantity' field, input: {}", quantity));
+        return badValues::quantity;
+    }
+
+    return tmp.value();
+}
+
+Side replay::parseSide(std::string_view side) {
+    if (side == "buy")
+        return Side::Buy;
+    if (side == "sell")
+        return Side::Sell;
+
+    logger_.error(std::format("Invalid order side, expected: 'buy' or 'sell', received: {}", side));
+    return Side::Bad;
+}
+
+price_t replay::parsePrice(std::string_view price) {
+    auto tmp = strfuncs::strToType<price_t>(price);
+    if (!tmp.has_value()) {
+        logger_.error(std::format("Failed to parse 'price' field, input: {}", price));
+        return badValues::price;
+    }
+
+    return tmp.value();
+}
 
 const std::unordered_map<std::string, Actions> replay::actionMap_{
     {"add", Actions::ADD}, {"cancel", Actions::CANCEL}, {"modify", Actions::MODIFY}};
