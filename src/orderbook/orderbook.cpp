@@ -172,7 +172,7 @@ orderPtr_t Orderbook::newOrder(quantity_t quantity, price_t price, OrderType typ
 }
 
 // PUBLIC FUNCTION IMPLEMENTATIONS
-std::pair<orderId_t, trades_t> Orderbook::addOrder(quantity_t quantity, price_t price, OrderType type, Side side)
+std::tuple<orderId_t, trades_t, OrderInfo> Orderbook::addOrder(quantity_t quantity, price_t price, OrderType type, Side side)
 {
     orderPtr_t order = newOrder(quantity, price, type, side);
 
@@ -183,12 +183,20 @@ std::pair<orderId_t, trades_t> Orderbook::addOrder(quantity_t quantity, price_t 
         if (!canBeFullyFilled(order->getPrice(), order->getInitialQuantity(), order->getSide()))
             return {};
     }
-    return {order->getOrderId(), matchOrder(order)};
+
+    // TODO: use OrderInfo in args as well instead of 4 different variables
+    OrderInfo info{
+        .price = price,
+        .quantity = quantity,
+        .side = side,
+        .type = type
+    };
+    return {order->getOrderId(), matchOrder(order), info};
 }
 
 void Orderbook::cancelOrder(orderId_t orderId)
 {
-    OrderInfo orderInfo = orders_.at(orderId);
+    InternalOrderInfo orderInfo = orders_.at(orderId);
     orders_.erase(orderId);
 
     orderPtr_t order = orderInfo.order_;
@@ -210,7 +218,7 @@ void Orderbook::cancelOrder(orderId_t orderId)
         levelData_.erase(price);
 }
 
-std::pair<orderId_t, trades_t> Orderbook::modifyOrder(orderId_t orderId, ModifyOrder modifications)
+std::tuple<orderId_t, trades_t, OrderInfo> Orderbook::modifyOrder(orderId_t orderId, ModifyOrder modifications)
 {
     orderPtr_t oldOrder = orders_.at(orderId).order_;
 

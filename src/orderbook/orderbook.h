@@ -16,19 +16,26 @@ struct LevelView {
 };
 using levels_t = std::vector<LevelView>;
 
+struct OrderInfo {
+    price_t price;
+    quantity_t quantity;
+    Side side;
+    OrderType type;
+};
+
 class Orderbook
 {
 public:
-    std::pair<orderId_t, trades_t> addOrder(quantity_t quantity, price_t price, OrderType type, Side side);
+    std::tuple<orderId_t, trades_t, OrderInfo> addOrder(quantity_t quantity, price_t price, OrderType type, Side side);
     void cancelOrder(orderId_t orderId);
-    std::pair<orderId_t, trades_t> modifyOrder(orderId_t orderId, ModifyOrder modifications);
+    std::tuple<orderId_t, trades_t, OrderInfo> modifyOrder(orderId_t orderId, ModifyOrder modifications);
     std::optional<price_t> bestAsk() const;
     std::optional<price_t> bestBid() const;
     levels_t fullDepthAsk() const { return fullDepth(Side::Sell); }
     levels_t fullDepthBid() const { return fullDepth(Side::Buy); }
 
 private:
-    struct OrderInfo {
+    struct InternalOrderInfo {
         orderPtr_t order_;
         orderPtrs_t::iterator location_;
     };
@@ -40,7 +47,7 @@ private:
     std::map<price_t, orderPtrs_t, std::less<price_t>> ask_;
     std::map<price_t, orderPtrs_t, std::greater<price_t>> bid_;
     std::map<price_t, LevelData> levelData_;
-    std::unordered_map<orderId_t, OrderInfo> orders_;
+    std::unordered_map<orderId_t, InternalOrderInfo> orders_;
     orderId_t lastOrderId_{
         1}; // TODO: change defualt to 0 when custom orderId_t is implemented. now id == 0 means that order was rejected
 
