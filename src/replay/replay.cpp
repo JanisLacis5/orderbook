@@ -62,12 +62,12 @@ Operation replay::parseLine(const std::string& raw)
     auto action = strfuncs::lower(tokens[0]);
     logger_.debug(std::format("raw action: {}, lowered: {}", tokens[0], action));
 
-    if (actionMap_.find(action) == actionMap_.end()) {
+    if (str2action_.find(action) == str2action_.end()) {
         logger_.error(std::format("action '{}' invalid", action));
         return {};
     }
 
-    ret.action = actionMap_.at(action);
+    ret.action = str2action_.at(action);
     ret.args = std::vector<std::string>(tokens.size() - 1);
     for (auto i = 0u; i < ret.args.size(); ++i)
         ret.args[i] = strfuncs::lower(tokens[i + 1]);
@@ -113,40 +113,64 @@ bool replay::onAdd(std::vector<std::string>& params)
     if (type == OrderType::Bad || quantity == badValues::quantity || side == Side::Bad || price == badValues::price)
         return false;
 
-    auto [orderId, trades] = ob_.addOrder(quantity, price, type, side);
-
-    // Logging (everything up until the function end)
-    logger_.info(std::format("New order with id {}:\nprice: {}\nquantity: {}\nside: {}\ntype: {}", orderId, price,
-                             quantity, strfuncs::upper(params[2]), strfuncs::upper(params[0])));
-    if (orderId == 0) {
-        logger_.info(
-            std::format("Order rejected | type={} side={} price={} qty={} | reason=order conditions not satisfied",
-                        strfuncs::upper(params[0]), strfuncs::upper(params[2]), price, quantity));
-        return true;
-    }
-
-    quantity_t executedQty = 0;
-    for (const auto& trade : trades)
-        executedQty += trade.quantity;
-
-    std::string tradeDetails = "";
-    if (!trades.empty()) {
-        for (const auto& trade : trades) {
-            tradeDetails += std::format("\n  trade | buyer={} seller={} qty={} price={}", trade.buyer, trade.seller,
-                                        trade.quantity, trade.price);
-        }
-    }
-
-    logger_.info(
-        std::format("Order accepted | id={} type={} side={} price={} qty={} | executed_qty={} trade_count={}{}",
-                    orderId, strfuncs::upper(params[0]), strfuncs::upper(params[2]), price, quantity, executedQty,
-                    trades.size(), tradeDetails));
-
+    auto [orderId, trades, orderInfo] = ob_.addOrder(quantity, price, type, side);
+    logStats(orderId, trades, orderInfo);
     return true;
 }
 
 bool replay::onModify(orderId_t orderId, std::vector<std::string>& params)
 {
+    if (params.size() < 1 || params.size() > 4) {
+        logger_.error(std::format("received wrong number of params for action MODIFY (received {}, expected 1-4)",
+                                  params.size()));
+        return false;
+    }
+
+    ModifyOrder mods;
+    for (auto kvPair : params) {
+        auto kv = strfuncs::split(kvPair, "=");
+        if (kv.size() != 2) {
+            logger_.error(std::format("Invalid moidification pair: '{}'", kvPair));
+            return false;
+        }
+
+        auto key = strfuncs::lower(kv[0]);
+        auto value = kv[1];
+
+        if (key == "ordertype") {
+            auto newType = parseOrderType(value);
+            if (newType == OrderType::Bad)
+                return false;
+
+            mods.type = newType;
+        } else if (key == "quantity") {
+            auto newQuantity = parseQuantity(value);
+            if (newQuantity == badValues::quantity)
+                return false;
+
+            mods.quantity = newQuantity;
+        } else if (key == "side") {
+            auto newSide = parseSide(value);
+            if (newSide == Side::Bad)
+                return false;
+
+            mods.side = newSide;
+        } else if (key == "price") {
+            auto newPrice = parsePrice(value);
+            if (newPrice == badValues::price)
+                return false;
+
+            mods.price = newPrice;
+        } else {
+            logger_.error(std::format(
+                "Modification argument '{}' is not valid, supported ones are: 'orderType', 'quantity', 'side;, 'price'",
+                key));
+            return false;
+        }
+    }
+
+    auto [newOrderId, trades, newOrderInfo] = ob_.modifyOrder(orderId, mods);
+    logStats(orderId, trades, newOrderInfo);
     return true;
 }
 
@@ -211,5 +235,43 @@ price_t replay::parsePrice(std::string_view price)
     return tmp.value();
 }
 
-const std::unordered_map<std::string, Actions> replay::actionMap_{
+void replay::logStats(orderId_t orderId, trades_t& trades, OrderInfo info)
+{
+    auto typeStr = type2str_.at(info.type);
+    auto sideStr = info.side == Side::Buy ? "BUY" : "SELL";
+    auto price = info.price;
+    auto quantity = info.quantity;
+
+    logger_.info(std::format("New order with id {}:\nprice: {}\nquantity: {}\nside: {}\ntype: {}", orderId, price,
+                             quantity, sideStr, typeStr));
+    if (orderId == 0) {
+        logger_.info(
+            std::format("Order rejected | type={} side={} price={} qty={} | reason=order conditions not satisfied",
+                        typeStr, sideStr, price, quantity));
+        return;
+    }
+
+    quantity_t executedQty = 0;
+    for (const auto& trade : trades)
+        executedQty += trade.quantity;
+
+    std::string tradeDetails = "";
+    if (!trades.empty()) {
+        for (const auto& trade : trades) {
+            tradeDetails += std::format("\n  trade | buyer={} seller={} qty={} price={}", trade.buyer, trade.seller,
+                                        trade.quantity, trade.price);
+        }
+    }
+
+    logger_.info(
+        std::format("Order accepted | id={} type={} side={} price={} qty={} | executed_qty={} trade_count={}{}",
+                    orderId, sideStr, typeStr, price, quantity, executedQty, trades.size(), tradeDetails));
+}
+
+const std::unordered_map<std::string, Actions> replay::str2action_{
     {"add", Actions::ADD}, {"cancel", Actions::CANCEL}, {"modify", Actions::MODIFY}};
+const std::unordered_map<OrderType, std::string> replay::type2str_{{OrderType::Market, "MARKET"},
+                                                                   {OrderType::GoodTillCancel, "GTC"},
+                                                                   {OrderType::GoodTillEOD, "GTE"},
+                                                                   {OrderType::FillOrKill, "FOK"},
+                                                                   {OrderType::FillAndKill, "FAK"}};

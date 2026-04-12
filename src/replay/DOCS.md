@@ -10,3 +10,4 @@ cli flags:
     args: orderId
 - MODIFY
     args: orderId, modifications...
+    modifications are in form `arg=val` where args can be: orderType, quantity, side, price. no spaces around `=`, does not work with spaces

@@ -2,6 +2,7 @@
 
 #include "Logger.h"
 #include "orderbook.h"
+#include "types.h"
 #include "usings.h"
 #include <filesystem>
 #include <unordered_map>
@@ -28,10 +29,12 @@ private:
     Logger logger_{"replay", DebugLevel::DEBUG};
     Orderbook ob_{};
 
-    static const std::unordered_map<std::string, Actions> actionMap_;
+    static const std::unordered_map<std::string, Actions> str2action_;
+    static const std::unordered_map<OrderType, std::string> type2str_;
 
     Operation parseLine(const std::string& raw);
     void processOperation(Operation& op);
+    void logStats(orderId_t orderId, trades_t& trades, OrderInfo info);
 
     // Functions per each action except cancel (just ob.cancel)
     bool onAdd(std::vector<std::string>& params);
