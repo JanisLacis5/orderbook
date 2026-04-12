@@ -2,7 +2,6 @@
 #include "strfuncs.h"
 #include "usings.h"
 #include <fstream>
-#include <span>
 
 void replay::run()
 {
@@ -33,8 +32,12 @@ Operation replay::parseLine(const std::string& raw)
         logger_.error(std::format("action '{}' invalid", action));
         return {};
     }
+
     ret.action = actionMap_.at(action);
-    ret.args = std::vector<std::string>{tokens.begin() + 1, tokens.end()};
+    ret.args = std::vector<std::string>(tokens.size() - 1);
+    for (auto i = 0u; i < ret.args.size(); ++i) {
+        ret.args[i] = strfuncs::lower(tokens[i+1]);
+    }
 
     return ret;
 }
@@ -77,10 +80,32 @@ bool replay::onAdd(std::vector<std::string>& params) {
     auto priceParam = params[3];
 
     // stirngs formatted
-    // TODO: TYPE
-    quantity_t quantity{};
-    auto res = std::from_chars(quantityParam.data(), quantityParam.data() + quantityParam.size(), quantity);
-
+    OrderType type;
+    if (typeParam == "market")
+        type = OrderType::Market;
+    else if (typeParam == "gtc") 
+        type = OrderType::GoodTillCancel;
+    else if (typeParam == "gte")
+        type = OrderType::GoodTillEOD;
+    else if (typeParam == "fok")
+        type = OrderType::FillOrKill;
+    else if (typeParam == "fak")
+        type = OrderType::FillAndKill;
+    else {
+        logger_.error("Invalid order type");
+        return false;
+    }
+    auto quantity = strfuncs::strToType<quantity_t>(quantityParam);
+    if (!quantity.has_value()) {
+        logger_.error(std::format("Failed to parse 'quantity' field, input: {}", quantityParam));
+        return false;
+    }
+    auto side = sideParam == "sell" ? Side::Sell : Side::Buy;
+    auto price = strfuncs::strToType<price_t>(priceParam);
+    if (!price.has_value()) {
+        logger_.error(std::format("Failed to parse 'price' field, input: {}", priceParam));
+        return false;
+    }
 }
 
 bool replay::onCancel(orderId_t orderId) {}
