@@ -1,8 +1,8 @@
+#include <charconv>
+#include <expected>
 #include <string>
 #include <type_traits>
 #include <vector>
-#include <charconv>
-#include <expected>
 
 namespace strfuncs
 {
@@ -10,9 +10,10 @@ namespace strfuncs
     std::string upper(const std::string& str);
     std::string lower(const std::string& str);
     std::pair<bool, std::string> checkAfterConv(std::from_chars_result& res);
-    
+
     template <typename resultType>
-    std::expected<resultType, std::errc> strToType(std::string_view src) {
+    std::expected<resultType, std::errc> strToType(std::string_view src)
+    {
         static_assert(std::is_default_constructible_v<resultType>);
         static_assert(std::is_integral_v<resultType>);
 

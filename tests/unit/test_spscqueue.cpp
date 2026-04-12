@@ -1,7 +1,7 @@
 #include "SPSCQueue.h"
 #include <gtest/gtest.h>
-#include <type_traits>
 #include <thread>
+#include <type_traits>
 
 extern "C" {
 void __ubsan_on_report()
