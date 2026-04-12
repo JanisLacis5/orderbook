@@ -172,7 +172,8 @@ orderPtr_t Orderbook::newOrder(quantity_t quantity, price_t price, OrderType typ
 }
 
 // PUBLIC FUNCTION IMPLEMENTATIONS
-std::tuple<orderId_t, trades_t, OrderInfo> Orderbook::addOrder(quantity_t quantity, price_t price, OrderType type, Side side)
+std::tuple<orderId_t, trades_t, OrderInfo> Orderbook::addOrder(quantity_t quantity, price_t price, OrderType type,
+                                                               Side side)
 {
     orderPtr_t order = newOrder(quantity, price, type, side);
 
@@ -185,12 +186,7 @@ std::tuple<orderId_t, trades_t, OrderInfo> Orderbook::addOrder(quantity_t quanti
     }
 
     // TODO: use OrderInfo in args as well instead of 4 different variables
-    OrderInfo info{
-        .price = price,
-        .quantity = quantity,
-        .side = side,
-        .type = type
-    };
+    OrderInfo info{.price = price, .quantity = quantity, .side = side, .type = type};
     return {order->getOrderId(), matchOrder(order), info};
 }
 
