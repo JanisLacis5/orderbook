@@ -4,7 +4,7 @@
 int main(int argc, char** argv)
 {
     auto filename = "input.txt";
-    if (argc == 1)
+    if (argc >= 2)
         filename = argv[1];
 
     if (!std::filesystem::exists(filename))

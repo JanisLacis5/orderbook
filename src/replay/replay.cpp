@@ -65,10 +65,15 @@ Operation replay::parseLine(const std::string& raw)
         return {};
     }
 
+    logger_.info(action);
     ret.action = str2action_.at(action);
+
+    logger_.info("1");
     ret.args = std::vector<std::string>(tokens.size() - 1);
+    logger_.info("2");
     for (auto i = 0u; i < ret.args.size(); ++i)
         ret.args[i] = strfuncs::lower(tokens[i + 1]);
+    logger_.info("3");
 
     return ret;
 }
