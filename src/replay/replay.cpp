@@ -60,8 +60,6 @@ Operation replay::parseLine(const std::string& raw)
     logger_.debug(std::format("parsed line: {}", parsedLine));
 
     auto action = strfuncs::lower(tokens[0]);
-    logger_.debug(std::format("raw action: {}, lowered: {}", tokens[0], action));
-
     if (str2action_.find(action) == str2action_.end()) {
         logger_.error(std::format("action '{}' invalid", action));
         return {};
