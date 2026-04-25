@@ -167,8 +167,7 @@ levels_t Orderbook::fullDepth(Side side) const
 
 orderPtr_t Orderbook::newOrder(quantity_t quantity, price_t price, OrderType type, Side side)
 {
-    lastOrderId_++;
-    return std::make_shared<Order>(lastOrderId_, quantity, price, type, side, getCurrTime());
+    return std::make_shared<Order>(++lastOrderId_, quantity, price, type, side, getCurrTime());
 }
 
 // PUBLIC FUNCTION IMPLEMENTATIONS
@@ -192,6 +191,11 @@ std::tuple<orderId_t, trades_t, OrderInfo> Orderbook::addOrder(quantity_t quanti
 
 void Orderbook::cancelOrder(orderId_t orderId)
 {
+    if (orders_.find(orderId) == orders_.end()) {
+        // TODO: add this to logs
+        return;
+    }
+
     InternalOrderInfo orderInfo = orders_.at(orderId);
     orders_.erase(orderId);
 

@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv)
 {
-    auto filename = "input.txt";
+    auto filename = "/home/janis/dev/orderbook/build/release/src/replay/input.txt";
     if (argc >= 2)
         filename = argv[1];
 

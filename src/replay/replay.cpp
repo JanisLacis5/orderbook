@@ -1,7 +1,23 @@
 #include "replay.h"
 #include "strfuncs.h"
 #include "usings.h"
+#include <format>
 #include <fstream>
+
+std::ostream& operator<<(std::ostream& os, const Operation& op) {
+    std::string action = "";
+    if (op.action == Actions::ADD) action = "add";
+    if (op.action == Actions::CANCEL) action = "cancel";
+    if (op.action == Actions::MODIFY) action = "modify";
+    if (op.action == Actions::NULLACTION) action = "nullaction";
+
+    std::string ret = "action: " + action;
+    for (auto arg : op.args) {
+        ret += "\n\targ: " + arg;
+    }
+
+    return os << ret;
+}
 
 replay::replay(std::filesystem::path inFp)
     : inputFp_{inFp}
@@ -65,15 +81,10 @@ Operation replay::parseLine(const std::string& raw)
         return {};
     }
 
-    logger_.info(action);
     ret.action = str2action_.at(action);
-
-    logger_.info("1");
     ret.args = std::vector<std::string>(tokens.size() - 1);
-    logger_.info("2");
     for (auto i = 0u; i < ret.args.size(); ++i)
         ret.args[i] = strfuncs::lower(tokens[i + 1]);
-    logger_.info("3");
 
     return ret;
 }
@@ -85,7 +96,7 @@ void replay::processOperation(Operation& op)
     else if (op.action == Actions::ADD) {
         auto ret = onAdd(op.args);
     } else if (op.action == Actions::CANCEL) {
-        auto orderId = parseOrderId(op.args[1]);
+        auto orderId = parseOrderId(op.args[0]);
         if (orderId == badValues::orderId)
             return;
 
