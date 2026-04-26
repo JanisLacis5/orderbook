@@ -4,11 +4,11 @@
 #include <string_view>
 #include <utility>
 
-// TODO: 
+// TODO:
 // - make this into DebugLogger
 // - do not allow to use DebugLogger in release builds
-// - create eventlogger that logs an event in a ring buffer and 
-//     make another thread that takes this buffer and pushes it 
+// - create eventlogger that logs an event in a ring buffer and
+//     make another thread that takes this buffer and pushes it
 //     to a file
 
 enum class DebugLevel : int { ERROR = 0, WARN = 1, INFO = 2, DEBUG = 3 };

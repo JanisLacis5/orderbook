@@ -4,17 +4,21 @@
 #include <format>
 #include <fstream>
 
-std::ostream& operator<<(std::ostream& os, const Operation& op) {
+std::ostream& operator<<(std::ostream& os, const Operation& op)
+{
     std::string action = "";
-    if (op.action == Actions::ADD) action = "add";
-    if (op.action == Actions::CANCEL) action = "cancel";
-    if (op.action == Actions::MODIFY) action = "modify";
-    if (op.action == Actions::NULLACTION) action = "nullaction";
+    if (op.action == Actions::ADD)
+        action = "add";
+    if (op.action == Actions::CANCEL)
+        action = "cancel";
+    if (op.action == Actions::MODIFY)
+        action = "modify";
+    if (op.action == Actions::NULLACTION)
+        action = "nullaction";
 
     std::string ret = "action: " + action;
-    for (auto arg : op.args) {
+    for (auto arg : op.args)
         ret += "\n\targ: " + arg;
-    }
 
     return os << ret;
 }
