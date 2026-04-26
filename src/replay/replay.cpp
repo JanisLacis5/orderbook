@@ -83,7 +83,7 @@ Operation replay::parseLine(const std::string& raw)
 
     ret.action = str2action_.at(action);
     ret.args = std::vector<std::string>(tokens.size() - 1);
-    for (auto i = 0u; i < ret.args.size(); ++i)
+    for (size_t i = 0; i < ret.args.size(); ++i)
         ret.args[i] = strfuncs::lower(tokens[i + 1]);
 
     return ret;
