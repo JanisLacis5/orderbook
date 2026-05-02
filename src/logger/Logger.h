@@ -11,7 +11,7 @@
 //     make another thread that takes this buffer and pushes it
 //     to a file
 
-enum class DebugLevel : int { ERROR = 0, WARN = 1, INFO = 2, DEBUG = 3 };
+enum class DebugLevel : int { ERROR = 0, WARN = 1, LOG = 2, DEBUG = 3 };
 enum class LogColor { GREEN, RED, YELLOW, WHITE, PURPLE, NONE, RESET };
 
 class Logger
@@ -27,7 +27,7 @@ public:
     void error(std::string_view mes, LogColor color = LogColor::RED);
     void logerrno(std::string_view mes, LogColor color = LogColor::RED); // function that is used instead of perror
     void warn(std::string_view mes, LogColor color = LogColor::YELLOW);
-    void info(std::string_view mes, LogColor color = LogColor::NONE);
+    void log(std::string_view mes, LogColor color = LogColor::NONE);
     void debug(std::string_view mes, LogColor color = LogColor::NONE);
 
 private:

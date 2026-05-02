@@ -16,7 +16,7 @@ int EpollManager::getEvents(std::array<epoll_event, MAX_EVENTS>& out)
     int nfds = ::epoll_wait(epollfd_, out.data(), MAX_EVENTS, 0);
     if (nfds == -1) {
         if (errno == EINTR) {
-            logger_.info("got EINTR, skipping...");
+            logger_.log("got EINTR, skipping...");
             return 0;
         }
 

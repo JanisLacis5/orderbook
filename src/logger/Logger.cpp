@@ -47,9 +47,9 @@ void Logger::warn(std::string_view mes, LogColor color)
         std::cout << colorCodes(color) << "[" << prefix_ << "]: " << mes << colorCodes(LogColor::RESET) << '\n';
 }
 
-void Logger::info(std::string_view mes, LogColor color)
+void Logger::log(std::string_view mes, LogColor color)
 {
-    if (level_ >= DebugLevel::INFO)
+    if (level_ >= DebugLevel::LOG)
         std::cout << colorCodes(color) << "[" << prefix_ << "]: " << mes << colorCodes(LogColor::RESET) << '\n';
 }
 

@@ -26,7 +26,7 @@ std::ostream& operator<<(std::ostream& os, const Operation& op)
 replay::replay(std::filesystem::path inFp)
     : inputFp_{inFp}
 {
-    logger_.info(std::format("input file path: {}", inputFp_.string()));
+    logger_.log(std::format("input file path: {}", inputFp_.string()));
 
     if (!std::filesystem::exists(inputFp_)) {
         auto mes = std::format("path {} does not exist", inputFp_.string());
@@ -37,8 +37,8 @@ replay::replay(std::filesystem::path inFp, std::string outFp)
     : inputFp_{inFp}
     , outputFp_{outFp}
 {
-    logger_.info(std::format("input file path: {}", inputFp_.string()));
-    logger_.info(std::format("output file path: {}", outputFp_.string()));
+    logger_.log(std::format("input file path: {}", inputFp_.string()));
+    logger_.log(std::format("output file path: {}", outputFp_.string()));
 
     if (!std::filesystem::exists(inputFp_)) {
         auto mes = std::format("path {} does not exist", inputFp_.string());
@@ -85,7 +85,6 @@ Operation replay::parseLine(const std::string& raw)
         return {};
     }
 
-    logger_.info("janis, action: " + action);
     ret.action = str2action_.at(action);
     ret.args = std::vector<std::string>(tokens.size() - 1);
     for (size_t i = 0; i < ret.args.size(); ++i)
@@ -257,7 +256,7 @@ price_t replay::parsePrice(std::string_view price)
 void replay::logStats(orderId_t orderId, trades_t& trades, OrderInfo info)
 {
     if (orderId == 0) {
-        logger_.info("Order rejected");
+        logger_.log("Order rejected");
         return;
     }
 
@@ -266,7 +265,7 @@ void replay::logStats(orderId_t orderId, trades_t& trades, OrderInfo info)
     auto price = info.price;
     auto quantity = info.quantity;
 
-    logger_.info(std::format("New order with id {}:\nprice: {}\nquantity: {}\nside: {}\ntype: {}", orderId, price,
+    logger_.log(std::format("New order with id {}:\nprice: {}\nquantity: {}\nside: {}\ntype: {}", orderId, price,
                              quantity, sideStr, typeStr));
     quantity_t executedQty = 0;
     for (const auto& trade : trades)
@@ -280,7 +279,7 @@ void replay::logStats(orderId_t orderId, trades_t& trades, OrderInfo info)
         }
     }
 
-    logger_.info(
+    logger_.log(
         std::format("Order accepted | id={} type={} side={} price={} qty={} | executed_qty={} trade_count={}{}",
                     orderId, sideStr, typeStr, price, quantity, executedQty, trades.size(), tradeDetails));
 }
