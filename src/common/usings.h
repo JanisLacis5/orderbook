@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 
+// TODO: make custom types that will have predictable bad values and other things
 using price_t = std::int32_t;
 using quantity_t = std::uint32_t;
 using orderId_t = std::uint64_t;

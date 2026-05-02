@@ -85,6 +85,7 @@ Operation replay::parseLine(const std::string& raw)
         return {};
     }
 
+    logger_.info("janis, action: " + action);
     ret.action = str2action_.at(action);
     ret.args = std::vector<std::string>(tokens.size() - 1);
     for (size_t i = 0; i < ret.args.size(); ++i)
@@ -255,6 +256,11 @@ price_t replay::parsePrice(std::string_view price)
 
 void replay::logStats(orderId_t orderId, trades_t& trades, OrderInfo info)
 {
+    if (orderId == 0) {
+        logger_.info("Order rejected");
+        return;
+    }
+
     auto typeStr = type2str_.at(info.type);
     auto sideStr = info.side == Side::Buy ? "BUY" : "SELL";
     auto price = info.price;
@@ -262,13 +268,6 @@ void replay::logStats(orderId_t orderId, trades_t& trades, OrderInfo info)
 
     logger_.info(std::format("New order with id {}:\nprice: {}\nquantity: {}\nside: {}\ntype: {}", orderId, price,
                              quantity, sideStr, typeStr));
-    if (orderId == 0) {
-        logger_.info(
-            std::format("Order rejected | type={} side={} price={} qty={} | reason=order conditions not satisfied",
-                        typeStr, sideStr, price, quantity));
-        return;
-    }
-
     quantity_t executedQty = 0;
     for (const auto& trade : trades)
         executedQty += trade.quantity;

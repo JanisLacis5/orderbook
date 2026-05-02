@@ -5,21 +5,22 @@
 
 std::string_view Logger::colorCodes(LogColor color)
 {
+    return "";
     switch (color) {
         case LogColor::GREEN:
-            return "\0[0;32m";
+            return "\033[0;32m";
         case LogColor::RED:
-            return "\0[0;31m";
+            return "\033[0;31m";
         case LogColor::YELLOW:
-            return "\0[0;33m";
+            return "\033[0;33m";
         case LogColor::WHITE:
-            return "\0[0;37m";
+            return "\033[0;37m";
         case LogColor::PURPLE:
-            return "\0[0;35m";
+            return "\033[0;35m";
         case LogColor::NONE:
             return "";
         case LogColor::RESET:
-            return "\0[0";
+            return "\033[0";
     }
 }
 
