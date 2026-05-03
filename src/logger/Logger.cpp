@@ -2,6 +2,8 @@
 #include <cerrno>
 #include <cstring>
 #include <iostream>
+#include <compare>
+#include <utility>
 
 std::string_view Logger::colorCodes(LogColor color)
 {
@@ -22,6 +24,11 @@ std::string_view Logger::colorCodes(LogColor color)
         case LogColor::RESET:
             return "\033[0";
     }
+}
+
+constexpr std::strong_ordering operator<=>(DebugLevel lhs, DebugLevel rhs)
+{
+    return std::to_underlying(lhs) <=> std::to_underlying(rhs);
 }
 
 void Logger::success(std::string_view mes, LogColor color)

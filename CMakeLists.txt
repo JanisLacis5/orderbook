@@ -10,6 +10,13 @@ set(GTEST_GIT_TAG 52eb8108c5bdec04579160ae17225d66034bd723)
 set(CLANG_FORMAT_BIN "/usr/bin/clang-format-20")
 set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 
+# COMPILE TIME VARIABLES
+add_library(project_options INTERFACE)
+target_compile_definitions(project_options INTERFACE
+    ORDERBOOK_DEBUG=$<IF:$<CONFIG:Debug>,1,0>
+    ORDERBOOK_RELEASE=$<IF:$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>,1,0>
+)
+
 # TSAN
 option(ENABLE_TSAN "Enable ThreadSanitizer" OFF)
 add_library(project_sanitizers INTERFACE)

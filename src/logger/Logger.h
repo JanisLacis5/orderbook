@@ -1,8 +1,6 @@
 #pragma once
 
-#include <compare>
 #include <string_view>
-#include <utility>
 
 // TODO:
 // - make this into DebugLogger
@@ -37,7 +35,3 @@ private:
     DebugLevel level_;
 };
 
-constexpr std::strong_ordering operator<=>(DebugLevel lhs, DebugLevel rhs)
-{
-    return std::to_underlying(lhs) <=> std::to_underlying(rhs);
-}
