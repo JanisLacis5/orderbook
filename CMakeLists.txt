@@ -53,7 +53,9 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/data_structures)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/net)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/logger)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/api)
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/replay)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/tools/replay)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/tools/commandParser)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/tools/obBench)
 
 # Common
 add_library(common 
@@ -65,6 +67,7 @@ target_include_directories(common
 )
 
 # Orderbook
+# TODO: make its own CMakeLists
 add_library(orderbook
     ${PROJECT_SOURCE_DIR}/src/orderbook/orderbook.cpp
 )
