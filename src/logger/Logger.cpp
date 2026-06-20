@@ -26,7 +26,7 @@ std::string_view Logger::colorCodes(LogColor color)
     }
 }
 
-constexpr std::strong_ordering operator<=>(DebugLevel lhs, DebugLevel rhs)
+constexpr std::strong_ordering operator<=>(LogLevel lhs, LogLevel rhs)
 {
     return std::to_underlying(lhs) <=> std::to_underlying(rhs);
 }
@@ -50,18 +50,18 @@ void Logger::logerrno(std::string_view mes, LogColor color)
 
 void Logger::warn(std::string_view mes, LogColor color)
 {
-    if (level_ >= DebugLevel::WARN)
+    if (LoggerConfig::logLevel() >= LogLevel::WARN)
         std::cout << colorCodes(color) << "[" << prefix_ << "]: " << mes << colorCodes(LogColor::RESET) << '\n';
 }
 
 void Logger::log(std::string_view mes, LogColor color)
 {
-    if (level_ >= DebugLevel::LOG)
+    if (LoggerConfig::logLevel() >= LogLevel::LOG)
         std::cout << colorCodes(color) << "[" << prefix_ << "]: " << mes << colorCodes(LogColor::RESET) << '\n';
 }
 
 void Logger::debug(std::string_view mes, LogColor color)
 {
-    if (level_ >= DebugLevel::DEBUG)
+    if (LoggerConfig::logLevel() >= LogLevel::DEBUG)
         std::cout << colorCodes(color) << "[" << prefix_ << "]: " << mes << colorCodes(LogColor::RESET) << '\n';
 }

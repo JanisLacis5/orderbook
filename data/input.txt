@@ -28,7 +28,7 @@ ADD FOK 200 buy 100
 CANCEL 3
 
 # Modify an order (example: change price/qty depending on your impl)
-MODIFY 4 150 98
+MODIFY 4 quantity=150 price=98
 
 # Final aggressive sell to hit bids
 ADD GTC 300 sell 98

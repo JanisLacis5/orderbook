@@ -27,7 +27,7 @@ public:
     std::vector<Command> parseFile(const std::string fp);
 
 private:
-    Logger logger_{"parser: "};
+    Logger logger_{"parser"};
 
     std::pair<Command, bool> processArgs(Actions action, const std::vector<std::string>& args);
     Command parseLine(const std::string& raw);

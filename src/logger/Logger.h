@@ -9,15 +9,14 @@
 //     make another thread that takes this buffer and pushes it
 //     to a file
 
-enum class DebugLevel : int { ERROR = 0, WARN = 1, LOG = 2, DEBUG = 3 };
+enum class LogLevel : int { ERROR = 0, WARN = 1, LOG = 2, DEBUG = 3 };
 enum class LogColor { GREEN, RED, YELLOW, WHITE, PURPLE, NONE, RESET };
 
 class Logger
 {
 public:
-    Logger(std::string_view prefix, DebugLevel level = DebugLevel::ERROR)
+    Logger(std::string_view prefix)
         : prefix_{prefix}
-        , level_{level}
     {
     }
 
@@ -32,6 +31,13 @@ private:
     std::string_view colorCodes(LogColor color);
     std::string_view target_; // TODO: default to stdout, but allow it to have a file path as well
     std::string_view prefix_;
-    DebugLevel level_;
 };
 
+class LoggerConfig 
+{
+public:
+    static void setLevel(LogLevel level) { logLevel_ = level; };
+    static LogLevel logLevel() { return logLevel_; };
+private:
+    inline static LogLevel logLevel_{ LogLevel::ERROR };
+};

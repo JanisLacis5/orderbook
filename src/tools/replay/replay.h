@@ -14,13 +14,15 @@ class replay
 public:
     explicit replay(std::filesystem::path inFp);
     explicit replay(std::filesystem::path inFp, std::string outFp);
+    explicit replay(std::filesystem::path inFp, LogLevel logLevel);
+    explicit replay(std::filesystem::path inFp, std::string outFp, LogLevel logLevel);
 
     void run(bool waitBeforeOperation);
 
 private:
     std::filesystem::path inputFp_;
     std::filesystem::path outputFp_{"/tmp/orderbook/replay_output.txt"};
-    Logger logger_{"replay", DebugLevel::DEBUG};
+    Logger logger_{"replay"};
     CommandParser parser_{};
     Orderbook ob_{};
 
