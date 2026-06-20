@@ -15,7 +15,7 @@ public:
     explicit replay(std::filesystem::path inFp);
     explicit replay(std::filesystem::path inFp, std::string outFp);
 
-    void run();
+    void run(bool waitBeforeOperation);
 
 private:
     std::filesystem::path inputFp_;
@@ -23,6 +23,9 @@ private:
     Logger logger_{"replay", DebugLevel::DEBUG};
     CommandParser parser_{};
     Orderbook ob_{};
+
+    // Flags
+    bool verbose_{false};
 
     static const std::unordered_map<std::string, Actions> str2action_;
     static const std::unordered_map<OrderType, std::string> type2str_;

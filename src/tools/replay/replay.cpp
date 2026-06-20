@@ -2,6 +2,7 @@
 #include "strfuncs.h"
 #include "usings.h"
 #include <format>
+#include <iostream>
 
 replay::replay(std::filesystem::path inFp)
     : inputFp_{inFp}
@@ -31,9 +32,15 @@ replay::replay(std::filesystem::path inFp, std::string outFp)
     }
 }
 
-void replay::run()
+void replay::run(bool waitBeforeOperation)
 {
     for (auto op : parser_.parseFile(inputFp_)) {
+        if (waitBeforeOperation) {
+            // waits for any input from user
+            if (verbose_)
+                logger_.log("Press Enter to process the next operation");
+            std::cin.get();
+        }
         processCommand(op);
     }
 }
