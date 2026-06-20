@@ -76,8 +76,12 @@ void Replay::processCommand(Command& op)
 
 void Replay::logStats(orderId_t orderId, trades_t& trades, OrderInfo info)
 {
-    if (orderId == 0) {
-        logger_.log("Order rejected");
+    if (orderId == badValues::orderId) {
+        logger_.log("Order rejected or order with the provided id did not exist");
+        return;
+    }
+    if (info.type == OrderType::Bad) {
+        logger_.log("Bad order type");
         return;
     }
 

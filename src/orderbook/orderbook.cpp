@@ -192,7 +192,7 @@ std::tuple<orderId_t, trades_t, OrderInfo> Orderbook::addOrder(quantity_t quanti
 void Orderbook::cancelOrder(orderId_t orderId)
 {
     if (orders_.find(orderId) == orders_.end()) {
-        // TODO: add this to logs
+        // TODO: add this to logs or return some sort of status code
         return;
     }
 
@@ -220,6 +220,11 @@ void Orderbook::cancelOrder(orderId_t orderId)
 
 std::tuple<orderId_t, trades_t, OrderInfo> Orderbook::modifyOrder(orderId_t orderId, ModifyOrder modifications)
 {
+    if (orders_.find(orderId) == orders_.end()) {
+        // TODO: add this to logs or return some sort of status code
+        return {};
+    }
+
     orderPtr_t oldOrder = orders_.at(orderId).order_;
 
     quantity_t quantity =
