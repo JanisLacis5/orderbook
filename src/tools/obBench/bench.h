@@ -1,10 +1,10 @@
 #pragma once
 
-#include <vector>
 #include "commandParser.h"
+#include <vector>
 
-class Bench {
-
+class Bench
+{
 public:
     Bench();
     ~Bench();

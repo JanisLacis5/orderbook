@@ -16,23 +16,27 @@ int main(int argc, char** argv)
                 waitBeforeOp = true;
             else
                 std::cout << "Unknown flag: " << std::quoted(split[0]) << std::endl;
-        }
-        else if (split.size() == 2) {
+
+        } else if (split.size() == 2) {
             if (split[0] == "--filename")
                 filename = split[1];
             else if (split[0] == "--log-level") {
                 auto level = strfuncs::lower(split[1]);
-                if (level == "error") LoggerConfig::setLevel(LogLevel::ERROR);
-                if (level == "warn") LoggerConfig::setLevel(LogLevel::WARN);
-                if (level == "log") LoggerConfig::setLevel(LogLevel::LOG);
-                if (level == "debug") LoggerConfig::setLevel(LogLevel::DEBUG);
-                else 
-                    std::cout << "Unknown log level: " << std::quoted(level) << ", available ones: 'error', 'warn', 'log', 'debug'" << std::endl;
-            }
-            else
+                if (level == "error")
+                    LoggerConfig::setLevel(LogLevel::ERROR);
+                else if (level == "warn")
+                    LoggerConfig::setLevel(LogLevel::WARN);
+                else if (level == "log")
+                    LoggerConfig::setLevel(LogLevel::LOG);
+                else if (level == "debug")
+                    LoggerConfig::setLevel(LogLevel::DEBUG);
+                else
+                    std::cout << "Unknown log level: " << std::quoted(level)
+                              << ", available ones: 'error', 'warn', 'log', 'debug'" << std::endl;
+            } else
                 std::cout << "Unknown flag: " << std::quoted(split[0]) << std::endl;
-        }
-        else {
+
+        } else {
             std::cout << "Bad argument: " << std::quoted(argv[i]) << std::endl;
             return 1;
         }
@@ -43,6 +47,6 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    replay replay{filename};
+    Replay replay{filename};
     replay.run(waitBeforeOp);
 }

@@ -1,8 +1,8 @@
 #include "Logger.h"
 #include <cerrno>
+#include <compare>
 #include <cstring>
 #include <iostream>
-#include <compare>
 #include <utility>
 
 std::string_view Logger::colorCodes(LogColor color)

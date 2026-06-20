@@ -1,17 +1,17 @@
 #pragma once
 
-#include <vector>
-#include <string>
-#include <unordered_map>
+#include "Logger.h"
 #include "types.h"
 #include "usings.h"
-#include "Logger.h"
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 enum class Actions { ADD, CANCEL, MODIFY, NULLACTION };
 
 struct Command {
     Actions action{Actions::NULLACTION};
-    
+
     orderId_t oid = badValues::orderId;
     OrderType type = OrderType::Bad;
     quantity_t quantity = badValues::quantity;
@@ -19,7 +19,8 @@ struct Command {
     Side side = Side::Bad;
 };
 
-class CommandParser {
+class CommandParser
+{
 public:
     static const std::unordered_map<std::string, Actions> str2action_;
     static const std::unordered_map<OrderType, std::string> type2str_;
@@ -29,7 +30,7 @@ public:
 private:
     Logger logger_{"parser"};
 
-    std::pair<Command, bool> processArgs(Actions action, const std::vector<std::string>& args);
+    Command processArgs(Actions action, const std::vector<std::string>& args);
     Command parseLine(const std::string& raw);
     orderId_t parseOrderId(const std::string_view id);
     OrderType parseOrderType(const std::string_view type);

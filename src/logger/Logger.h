@@ -33,11 +33,12 @@ private:
     std::string_view prefix_;
 };
 
-class LoggerConfig 
+class LoggerConfig
 {
 public:
-    static void setLevel(LogLevel level) { logLevel_ = level; };
-    static LogLevel logLevel() { return logLevel_; };
+    static void setLevel(LogLevel level) { logLevel_ = level; }
+    static LogLevel logLevel() { return logLevel_; }
+
 private:
-    inline static LogLevel logLevel_{ LogLevel::ERROR };
+    inline static LogLevel logLevel_{LogLevel::ERROR};
 };

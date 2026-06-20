@@ -1,21 +1,18 @@
 #pragma once
 
 #include "Logger.h"
-#include "orderbook.h"
 #include "commandParser.h"
+#include "orderbook.h"
 #include "types.h"
 #include "usings.h"
-#include "commandParser.h"
 #include <filesystem>
 #include <unordered_map>
 
-class replay
+class Replay
 {
 public:
-    explicit replay(std::filesystem::path inFp);
-    explicit replay(std::filesystem::path inFp, std::string outFp);
-    explicit replay(std::filesystem::path inFp, LogLevel logLevel);
-    explicit replay(std::filesystem::path inFp, std::string outFp, LogLevel logLevel);
+    explicit Replay(std::filesystem::path inFp);
+    explicit Replay(std::filesystem::path inFp, std::string outFp);
 
     void run(bool waitBeforeOperation);
 
