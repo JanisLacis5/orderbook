@@ -15,18 +15,14 @@ int main(int argc, char** argv)
         if (split.size() == 1) {
             if (split[0] == "--help") {
                 std::cout << "Usage: " << std::endl;
-                std::cout << "\t./replay [FLAGS]" << std::endl;
+                std::cout << "\t./orderbook_benchmark [FLAGS]" << std::endl;
                 std::cout << "Available flags: " << std::endl;
                 std::cout << "\t--help: displays this message" << std::endl;
-                std::cout << "\t--wait-before-op: waits for enter before processesing the next input operation"
-                          << std::endl;
                 std::cout << "\t--filename (string): path to input file, default: " << filename << std::endl;
-                std::cout << "\t--log-level (default: LOG, available: ERROR, WARN, LOG, DEBUG in increasing log "
-                             "amount): higher log level - more verbose logs\nNote: choosing anything lower than LOG "
-                             "will result in not having enough logs to see what is going on"
+                std::cout << "\t--iterations (int): how many times operations from the provided (or defualt) file are "
+                             "exectued"
                           << std::endl;
-            }
-            else
+            } else
                 std::cout << "Unknown flag: " << std::quoted(split[0]) << std::endl;
 
         } else if (split.size() == 2) {
@@ -65,8 +61,6 @@ int main(int argc, char** argv)
     std::cout << "\nBenchmark result\n";
     std::cout << "----------------\n";
     std::cout << "elapsed ns: " << result.elapsed_ns << '\n';
-    std::cout << "ns/command: " << std::fixed << std::setprecision(2)
-              << result.ns_per_command << '\n';
-    std::cout << "commands/sec: " << std::fixed << std::setprecision(2)
-              << result.commands_per_second << '\n';
+    std::cout << "ns/command: " << std::fixed << std::setprecision(2) << result.ns_per_command << '\n';
+    std::cout << "commands/sec: " << std::fixed << std::setprecision(2) << result.commands_per_second << '\n';
 }

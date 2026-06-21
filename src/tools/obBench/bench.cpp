@@ -3,7 +3,8 @@
 #include "usings.h"
 #include <chrono>
 
-Bench::Bench(std::filesystem::path inFp, size_t iterations) : iterations_{iterations}
+Bench::Bench(std::filesystem::path inFp, size_t iterations)
+    : iterations_{iterations}
 {
     if (!std::filesystem::exists(inFp)) {
         auto mes = std::format("path {} does not exist", inFp.string());
@@ -16,7 +17,7 @@ Bench::Bench(std::filesystem::path inFp, size_t iterations) : iterations_{iterat
 
 BenchResult Bench::run()
 {
-    const auto start = std::chrono::steady_clock::now(); 
+    const auto start = std::chrono::steady_clock::now();
 
     for (size_t i{}; i < iterations_; ++i) {
         for (auto op : commands_) {
@@ -29,17 +30,13 @@ BenchResult Bench::run()
     }
 
     const auto end = std::chrono::steady_clock::now();
-    const auto elapsed_ns =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    const auto elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     const auto commandCnt = commandCount() * iterations_;
 
     return BenchResult{
         .elapsed_ns = elapsed_ns,
-        .ns_per_command = static_cast<double>(elapsed_ns) /
-                          static_cast<double>(commandCnt),
-        .commands_per_second =
-            static_cast<double>(commandCnt) /
-            (static_cast<double>(elapsed_ns) / 1'000'000'000.0),
+        .ns_per_command = static_cast<double>(elapsed_ns) / static_cast<double>(commandCnt),
+        .commands_per_second = static_cast<double>(commandCnt) / (static_cast<double>(elapsed_ns) / 1'000'000'000.0),
         .total_commands = commandCnt,
     };
 }

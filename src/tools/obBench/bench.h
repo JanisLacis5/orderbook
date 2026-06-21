@@ -2,8 +2,8 @@
 
 #include "commandParser.h"
 #include "orderbook.h"
-#include <vector>
 #include <filesystem>
+#include <vector>
 
 struct BenchResult {
     int64_t elapsed_ns;
@@ -17,7 +17,7 @@ class Bench
 public:
     Bench(std::filesystem::path inFp, size_t iterations);
 
-    const size_t commandCount() const { return commands_.size(); };
+    const size_t commandCount() const { return commands_.size(); }
     BenchResult run();
 
 private:
