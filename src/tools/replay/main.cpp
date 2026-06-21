@@ -7,12 +7,25 @@ int main(int argc, char** argv)
     // args for replay class, declare them here and process in the loop
     std::filesystem::path filename = "/home/janis/dev/orderbook/data/input.txt";
     bool waitBeforeOp = false;
+    LoggerConfig::setLevel(LogLevel::LOG);
 
     // Process user input
     for (int i = 1; i < argc; ++i) {
         auto split = strfuncs::split(argv[i], "=");
         if (split.size() == 1) {
-            if (split[0] == "--wait-before-op")
+            if (split[0] == "--help") {
+                std::cout << "Usage: " << std::endl;
+                std::cout << "\t./replay [FLAGS]" << std::endl;
+                std::cout << "Available flags: " << std::endl;
+                std::cout << "\t--help: displays this message" << std::endl;
+                std::cout << "\t--wait-before-op: waits for enter before processesing the next input operation"
+                          << std::endl;
+                std::cout << "\t--filename (string): path to input file, default: " << filename << std::endl;
+                std::cout << "\t--log-level (default: LOG, available: ERROR, WARN, LOG, DEBUG in increasing log "
+                             "amount): higher log level - more verbose logs\nNote: choosing anything lower than LOG "
+                             "will result in not having enough logs to see what is going on"
+                          << std::endl;
+            } else if (split[0] == "--wait-before-op")
                 waitBeforeOp = true;
             else
                 std::cout << "Unknown flag: " << std::quoted(split[0]) << std::endl;
@@ -22,11 +35,17 @@ int main(int argc, char** argv)
                 filename = split[1];
             else if (split[0] == "--log-level") {
                 auto level = strfuncs::lower(split[1]);
-                if (level == "error")
+                if (level == "error") {
+                    std::cout << "WARNING: you will not see enough logs with this option, make sure you know what you "
+                                 "are doing or use the default option"
+                              << std::endl;
                     LoggerConfig::setLevel(LogLevel::ERROR);
-                else if (level == "warn")
+                } else if (level == "warn") {
+                    std::cout << "WARNING: you will not see enough logs with this option, make sure you know what you "
+                                 "are doing or use the default option"
+                              << std::endl;
                     LoggerConfig::setLevel(LogLevel::WARN);
-                else if (level == "log")
+                } else if (level == "log")
                     LoggerConfig::setLevel(LogLevel::LOG);
                 else if (level == "debug")
                     LoggerConfig::setLevel(LogLevel::DEBUG);

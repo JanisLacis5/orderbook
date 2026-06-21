@@ -35,13 +35,12 @@ Replay::Replay(std::filesystem::path inFp, std::string outFp)
 
 void Replay::run(bool waitBeforeOperation)
 {
+    if (waitBeforeOperation)
+        logger_.log("Press Enter to start");
+
     for (auto op : parser_.parseFile(inputFp_)) {
-        if (waitBeforeOperation) {
-            // waits for any input from user
-            if (verbose_)
-                logger_.log("Press Enter to process the next operation");
+        if (waitBeforeOperation)
             std::cin.get();
-        }
         processCommand(op);
     }
 }

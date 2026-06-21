@@ -9,6 +9,9 @@
 #include <optional>
 #include <unordered_map>
 
+/* TODO: make better return types. Run unit tests, some fail currently because of cancelOrder changes
+    It is not allowed to throw from the orderbook, fix that, e.g. remove all throws and protect against them */
+
 struct LevelView {
     price_t price;
     uint32_t volume;
