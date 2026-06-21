@@ -23,9 +23,6 @@ private:
     CommandParser parser_{};
     Orderbook ob_{};
 
-    // Flags
-    bool verbose_{false};
-
     static const std::unordered_map<std::string, Actions> str2action_;
     static const std::unordered_map<OrderType, std::string> type2str_;
 

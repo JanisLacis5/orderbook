@@ -79,12 +79,8 @@ void Replay::logStats(orderId_t orderId, trades_t& trades, OrderInfo info)
         logger_.log("Order rejected or order with the provided id did not exist");
         return;
     }
-    if (info.type == OrderType::Bad) {
-        logger_.log("Bad order type");
-        return;
-    }
 
-    auto typeStr = parser_.type2str_.at(info.type);
+    auto typeStr = info.type == OrderType::Bad ? "BAD" : parser_.type2str_.at(info.type);
     auto sideStr = info.side == Side::Buy ? "BUY" : "SELL";
     auto price = info.price;
     auto quantity = info.quantity;
