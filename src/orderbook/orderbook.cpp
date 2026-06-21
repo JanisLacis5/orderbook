@@ -9,7 +9,6 @@ trades_t Orderbook::matchOrder(orderPtr_t order)
 {
     auto side = order->getSide();
     auto orderId = order->getOrderId();
-    trades_t trades;
     std::optional<price_t> threshold;
 
     if (order->getType() != OrderType::Market)
@@ -18,6 +17,7 @@ trades_t Orderbook::matchOrder(orderPtr_t order)
     auto it = side == Side::Buy ? ask_.begin() : bid_.begin();
     auto itEnd = side == Side::Buy ? ask_.end() : bid_.end();
 
+    trades_t trades;
     while (it != itEnd && !order->isFullyFilled()) {
         auto& [currPrice, orders] = *it;
         if (threshold.has_value() && ((side == Side::Buy && currPrice > threshold.value()) ||

@@ -6,10 +6,10 @@ target_include_directories(obBench
         ${PROJECT_SOURCE_DIR}/src/tools/obBench
 )
 target_link_libraries(obBench
-    PUBLIC common logger commandParser
+    PUBLIC common commandParser orderbook
 )
 
-add_executable(orderbook_benchmark bench.cpp)
+add_executable(orderbook_benchmark main.cpp)
 target_link_libraries(orderbook_benchmark
     PRIVATE obBench
 )
