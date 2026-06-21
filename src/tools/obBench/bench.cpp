@@ -20,13 +20,8 @@ BenchResult Bench::run()
     const auto start = std::chrono::steady_clock::now();
 
     for (size_t i{}; i < iterations_; ++i) {
-        for (auto op : commands_) {
+        for (auto op : commands_)
             processCommand(op);
-
-            // consume something so compiler cannot delete the work
-            volatile auto sink = ob_.bestBid().value_or(price_t{});
-            (void)sink;
-        }
     }
 
     const auto end = std::chrono::steady_clock::now();

@@ -51,8 +51,9 @@ private:
     std::map<price_t, orderPtrs_t, std::greater<price_t>> bid_;
     std::map<price_t, LevelData> levelData_;
     std::unordered_map<orderId_t, InternalOrderInfo> orders_;
-    orderId_t lastOrderId_{
-        1}; // TODO: change defualt to 0 when custom orderId_t is implemented. now id == 0 means that order was rejected
+
+    // TODO: change defualt to 0 when orderId_t strong type is implemented. now id == 0 means that order was rejected
+    orderId_t lastOrderId_{1};
 
     orderPtr_t newOrder(quantity_t quantity, price_t price, OrderType type, Side side);
     trades_t matchOrder(orderPtr_t order);

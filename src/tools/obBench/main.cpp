@@ -4,8 +4,10 @@
 
 int main(int argc, char** argv)
 {
+    const std::filesystem::path DATA_PATH = "/home/janis/dev/orderbook/data";
+
     // args for replay class, declare them here and process in the loop
-    std::filesystem::path filename = "/home/janis/dev/orderbook/data/input.txt";
+    std::string filename = "input.txt";
     size_t iterations = 10000;
     LoggerConfig::setLevel(LogLevel::LOG);
 
@@ -39,12 +41,13 @@ int main(int argc, char** argv)
         }
     }
 
-    if (!std::filesystem::exists(filename)) {
+    std::cout << DATA_PATH / filename << std::endl;
+    if (!std::filesystem::exists(DATA_PATH / filename)) {
         std::cout << "file '" << filename << "' does not exist" << std::endl;
         return 1;
     }
 
-    Bench bench{filename, iterations};
+    Bench bench{DATA_PATH / filename, iterations};
 
     const auto command_count = bench.commandCount();
     const auto total_commands = command_count * iterations;

@@ -52,7 +52,9 @@ This benchmark repeatedly executes a small deterministic scenario. The result is
 There also has been an observerd issue - increasing iteration count increases time that is taken for one commnand, here are some outputs:
 
 ```bash
-janis ~/dev/orderbook/build/release/bin  main $ ./orderbook_benchmark --iterations=100000
+$ ./orderbook_benchmark --iterations=100000
+```
+```text
 Benchmark workload
 ------------------
 file: "/home/janis/dev/orderbook/data/input.txt"
@@ -65,9 +67,12 @@ Benchmark result
 elapsed ns: 153891906
 ns/command: 109.92
 commands/sec: 9097294.56
+```
 
----
-janis ~/dev/orderbook/build/release/bin  main $ ./orderbook_benchmark --iterations=1000000
+```bash
+$ ./orderbook_benchmark --iterations=1000000
+```
+```text
 Benchmark workload
 ------------------
 file: "/home/janis/dev/orderbook/data/input.txt"
@@ -80,9 +85,12 @@ Benchmark result
 elapsed ns: 1703930547
 ns/command: 121.71
 commands/sec: 8216297.33
+```
 
----
-janis ~/dev/orderbook/build/release/bin  main $ ./orderbook_benchmark --iterations=10000000
+```bash
+$ ./orderbook_benchmark --iterations=10000000
+```
+```text
 Benchmark workload
 ------------------
 file: "/home/janis/dev/orderbook/data/input.txt"
@@ -101,6 +109,45 @@ Investigation:
 
 * Valgrind showed no leaks.
 * `/usr/bin/time -v` showed increasing maximum resident set size.
+
+update 1: by creating a file with `scripts/command_generator.py` that actually grows the book, results are fairly consistent when iterations icrease:
+```bash
+$ ./orderbook_benchmark --iterations=1 --filename=book_growth.txt
+```
+```text
+"/home/janis/dev/orderbook/data/book_growth.txt"
+Benchmark workload
+------------------
+file: book_growth.txt
+commands/iteration: 1000000
+iterations: 1
+total commands: 1000000
+
+Benchmark result
+----------------
+elapsed ns: 264494143
+ns/command: 264.49
+commands/sec: 3780802.06
+```
+
+```bash
+$ ./orderbook_benchmark --iterations=10 --filename=book_growth.txt
+```
+```text
+"/home/janis/dev/orderbook/data/book_growth.txt"
+Benchmark workload
+------------------
+file: book_growth.txt
+commands/iteration: 1000000
+iterations: 10
+total commands: 10000000
+
+Benchmark result
+----------------
+elapsed ns: 2678720297
+ns/command: 267.87
+commands/sec: 3733125.86
+```
 
 // fix will be documented here
 
