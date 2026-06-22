@@ -26,5 +26,5 @@ private:
     std::vector<Command> commands_;
     size_t iterations_{};
 
-    void processCommand(Command& op);
+    void processCommand(Command& op, Orderbook& book);
 };

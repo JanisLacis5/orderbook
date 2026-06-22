@@ -21,7 +21,7 @@ BenchResult Bench::run()
 
     for (size_t i{}; i < iterations_; ++i) {
         for (auto op : commands_)
-            processCommand(op);
+            processCommand(op, ob_);
     }
 
     const auto end = std::chrono::steady_clock::now();
@@ -36,16 +36,16 @@ BenchResult Bench::run()
     };
 }
 
-void Bench::processCommand(Command& op)
+void Bench::processCommand(Command& op, Orderbook& book)
 {
     if (op.action == Actions::NULLACTION)
         return;
 
     else if (op.action == Actions::ADD) {
-        auto [orderId, trades, orderInfo] = ob_.addOrder(op.quantity, op.price, op.type, op.side);
+        auto [orderId, trades, orderInfo] = book.addOrder(op.quantity, op.price, op.type, op.side);
 
     } else if (op.action == Actions::CANCEL) {
-        ob_.cancelOrder(op.oid);
+        book.cancelOrder(op.oid);
 
     } else if (op.action == Actions::MODIFY) {
         ModifyOrder mods;
@@ -58,6 +58,6 @@ void Bench::processCommand(Command& op)
         if (op.type != OrderType::Bad)
             mods.type = op.type;
 
-        auto [newOrderId, trades, newOrderInfo] = ob_.modifyOrder(op.oid, mods);
+        auto [newOrderId, trades, newOrderInfo] = book.modifyOrder(op.oid, mods);
     }
 }
