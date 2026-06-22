@@ -149,7 +149,73 @@ ns/command: 267.87
 commands/sec: 3733125.86
 ```
 
-// fix will be documented here
+Update 2: it has been found that the linear growth is because of orders piling up, it is normal. therefore, this problem will be marked as resolved. here is heaptrack output for reference:
+
+```bash
+$ heaptrack ./orderbook_benchmark --iterations=1000000
+```
+```text
+Benchmark workload
+------------------
+file: input.txt
+commands/iteration: 14
+iterations: 1000000
+total commands: 14000000
+
+Benchmark result
+----------------
+elapsed ns: 9142735215
+ns/command: 653.05
+commands/sec: 1531270.42
+heaptrack stats:
+        allocations:            52000141
+        leaked allocations:     1
+        temporary allocations:  2000027
+```
+```bash
+$ heaptrack --analyze "/home/janis/dev/orderbook/build/release/bin/heaptrack.orderbook_benchmark.133718.zst"
+```
+```text
+total runtime: 9.14s.
+calls to allocation functions: 52000141 (5686804/s)
+temporary memory allocations: 2000028 (218725/s)
+peak heap memory consumption: 85.89K
+peak RSS (including heaptrack overhead): 5.23M
+total memory leaked: 1.02K
+```
+
+```bash
+$ heaptrack ./orderbook_benchmark --filename=book_growth.txt --iterations=1
+```
+```text
+Benchmark workload
+------------------
+file: book_growth.txt
+commands/iteration: 1000000
+iterations: 1
+total commands: 1000000
+
+Benchmark result
+----------------
+elapsed ns: 962332494
+ns/command: 962.33
+commands/sec: 1039141.88
+heaptrack stats:
+        allocations:            10002076
+        leaked allocations:     1
+        temporary allocations:  2000001
+```
+```bash
+$ heaptrack --analyze "/home/janis/dev/orderbook/build/release/bin/heaptrack.orderbook_benchmark.136446.zst"
+```
+```text
+total runtime: 2.60s.
+calls to allocation functions: 10002076 (3843995/s)
+temporary memory allocations: 2000002 (768640/s)
+peak heap memory consumption: 173.32M
+peak RSS (including heaptrack overhead): 208.95M
+total memory leaked: 1.02K
+```
 
 ## Optimization Entries
 All optimization tries (good or bad) will be documented here. I will explain reasons why I thought this is a good optimization and maybe some sources what i read as well will be documented here. I will explain reasons why I thought this is a good optimization and maybe some sources what i read as well.
